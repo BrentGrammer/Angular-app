@@ -20,4 +20,11 @@ export class ShoppingListService {
     this.ingredientsChanged.emit(this.ingredients.slice());
     // (In the component(shopping-list) where you want to update the list, subscribe to this event)
   }
+
+  addIngredients(ingredients: Ingredient[]) {
+    // you can also spread arrays into the push to add multiple els
+    // this.ingredients.push(...ingredients);
+    ingredients.forEach(ing => this.ingredients.push(ing));
+    this.ingredientsChanged.emit(this.ingredients.slice());
+  }
 }
