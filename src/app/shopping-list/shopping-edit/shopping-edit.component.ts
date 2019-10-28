@@ -55,6 +55,9 @@ export class ShoppingEditComponent implements OnInit, OnDestroy {
     } else {
       this.shoppingListService.addIngredient(newIngredient);
     }
+    // reset editMode to prevent bug if editing a item and submitting - update button remains since mode isn't reset
+    this.editMode = false;
+    form.reset();
   }
 
   ngOnDestroy(): void {
