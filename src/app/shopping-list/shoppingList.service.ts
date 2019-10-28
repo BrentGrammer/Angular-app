@@ -30,4 +30,9 @@ export class ShoppingListService {
     ingredients.forEach(ing => this.ingredients.push(ing));
     this.ingredientsChanged.next(this.ingredients.slice());
   }
+
+  // get an ingredient being edited on the shopping-edit component:
+  getIngredient(index: number): Ingredient {
+    return this.ingredients[index];
+  }
 }

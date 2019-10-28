@@ -17,6 +17,7 @@ export class ShoppingEditComponent implements OnInit, OnDestroy {
   editMode = false;
   // store the item index/id if editing:
   editedItemIndex: number;
+  editedItem: Ingredient;
 
   constructor(private shoppingListService: ShoppingListService) {}
 
@@ -28,6 +29,8 @@ export class ShoppingEditComponent implements OnInit, OnDestroy {
         this.editedItemIndex = index;
         // determines submit behavior to edit an existing item instead of creating a new one
         this.editMode = true;
+        // get the ingredient being edited from the list in the service:
+        this.editedItem = this.shoppingListService.getIngredient(index);
       }
     );
   }
