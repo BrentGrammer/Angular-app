@@ -19,4 +19,11 @@ export class ShoppingListComponent implements OnInit {
       (ingredients: Ingredient[]) => (this.ingredients = ingredients)
     );
   }
+
+  // handler when an item in the list is clicked to edit
+  onEditItem(index: number) {
+    // startedEditing is a Subject created which will emit the index of the item being edited
+    // The shopping-edit component is listening for this emission with the item index/id to edit
+    this.shoppingListService.startedEditing.next(index);
+  }
 }

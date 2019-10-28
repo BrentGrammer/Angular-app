@@ -1,8 +1,10 @@
 import { Ingredient } from "../shared/ingredient.model";
-import { EventEmitter } from "@angular/core";
+import { Subject } from "rxjs";
 
 export class ShoppingListService {
-  ingredientsChanged = new EventEmitter<Ingredient[]>();
+  ingredientsChanged = new Subject<Ingredient[]>();
+  // used in shopping-list.ts component to emit the index of the item being edited
+  startedEditing = new Subject<number>();
 
   private ingredients: Ingredient[] = [
     new Ingredient("Apples", 5),
@@ -17,7 +19,8 @@ export class ShoppingListService {
     this.ingredients.push(ingredient);
     // Because the shopping list is working with a copy of ingredients, you need to inform the component that the list
     // updated and pass in the updated copy
-    this.ingredientsChanged.emit(this.ingredients.slice());
+    // This passes in the new ingredients array to shopping list component ts file which is subscribed to this subject
+    this.ingredientsChanged.next(this.ingredients.slice());
     // (In the component(shopping-list) where you want to update the list, subscribe to this event)
   }
 
@@ -25,6 +28,6 @@ export class ShoppingListService {
     // you can also spread arrays into the push to add multiple els
     // this.ingredients.push(...ingredients);
     ingredients.forEach(ing => this.ingredients.push(ing));
-    this.ingredientsChanged.emit(this.ingredients.slice());
+    this.ingredientsChanged.next(this.ingredients.slice());
   }
 }
