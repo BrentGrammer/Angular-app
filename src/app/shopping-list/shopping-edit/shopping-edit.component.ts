@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Component, OnInit, OnDestroy, ViewChild } from "@angular/core";
 import { Ingredient } from "src/app/shared/ingredient.model";
 import { ShoppingListService } from "../shoppingList.service";
 import { NgForm } from "@angular/forms";
@@ -10,6 +10,8 @@ import { Subscription } from "rxjs";
   styleUrls: ["./shopping-edit.component.css"]
 })
 export class ShoppingEditComponent implements OnInit, OnDestroy {
+  // Get a reference to the edit form in the html to assign item being edited data to
+  @ViewChild("f") shoppingListForm: NgForm;
   // store the subscription for clean up if component is destroyed
   subscription: Subscription;
   // this is set to determine what should be done when the form is submiteed - should we create a new item or
@@ -31,6 +33,11 @@ export class ShoppingEditComponent implements OnInit, OnDestroy {
         this.editMode = true;
         // get the ingredient being edited from the list in the service:
         this.editedItem = this.shoppingListService.getIngredient(index);
+        // assign editing item data to fill out form:
+        this.shoppingListForm.setValue({
+          name: this.editedItem.name,
+          amount: this.editedItem.amount
+        });
       }
     );
   }
