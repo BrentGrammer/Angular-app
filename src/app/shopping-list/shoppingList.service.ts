@@ -31,6 +31,12 @@ export class ShoppingListService {
     this.ingredientsChanged.next(this.ingredients.slice());
   }
 
+  updateIngredient(index: number, newIngredient: Ingredient) {
+    this.ingredients[index] = newIngredient;
+    // emit the updated ingredients list to components that are subscribed to it
+    this.ingredientsChanged.next(this.ingredients.slice());
+  }
+
   // get an ingredient being edited on the shopping-edit component:
   getIngredient(index: number): Ingredient {
     return this.ingredients[index];
