@@ -43,7 +43,6 @@ export class ShoppingEditComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(form: NgForm) {
-    console.log(this.editedItem);
     const { value } = form;
     const newIngredient = new Ingredient(value.name, value.amount);
     // prevent adding an item if editing, just add item info to array in service:
@@ -58,6 +57,12 @@ export class ShoppingEditComponent implements OnInit, OnDestroy {
     // reset editMode to prevent bug if editing a item and submitting - update button remains since mode isn't reset
     this.editMode = false;
     form.reset();
+  }
+
+  onClear() {
+    this.shoppingListForm.reset();
+    // reset flag so user isn't updating anything when entering a new entry
+    this.editMode = false;
   }
 
   ngOnDestroy(): void {
