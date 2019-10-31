@@ -37,6 +37,13 @@ export class ShoppingListService {
     this.ingredientsChanged.next(this.ingredients.slice());
   }
 
+  deleteIngredient(index: number) {
+    // splice allows you start at an index in the array and remove a certain number of elements (or add elements as 3rd, 4th args..)
+    this.ingredients.splice(index, 1);
+    // notify shopping list of new ingredients list (pass a copy, not the direct reference)
+    this.ingredientsChanged.next(this.ingredients.slice());
+  }
+
   // get an ingredient being edited on the shopping-edit component:
   getIngredient(index: number): Ingredient {
     return this.ingredients[index];
