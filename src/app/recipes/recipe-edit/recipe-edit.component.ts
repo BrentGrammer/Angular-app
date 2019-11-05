@@ -46,7 +46,7 @@ export class RecipeEditComponent implements OnInit {
       if (recipe["ingredients"]) {
         // loop through the ingredient
         for (let ingredient of recipe.ingredients) {
-          // use FormGroup since there is name and amount controls to set for the ingredient entry
+          // use FormGroup since there is name and amount controls to set for the ingredient entry - a group of inputs
           const recipeIngredient = new FormGroup({
             name: new FormControl(ingredient.name),
             amount: new FormControl(ingredient.amount)
@@ -63,6 +63,18 @@ export class RecipeEditComponent implements OnInit {
       description: new FormControl(recipeDescription),
       ingredients: recipeIngredients // is a form array initialized above
     });
+  }
+
+  // This method adds a new form group of fields for inputting the name and amount of a new ingredient to add to the recipe
+  // there is a ngFor loop in the formgroup in the html that renders form group fields for each item in the form array in the
+  // form object ingredients property.  This pushes a new empty form group onto that array to generate inputs in the html
+  // note that the button in the html receives the type of button to prevent form submission when this is called on click
+  onAddIngredient() {
+    // need to cast it to FormArray since Typescript doesn't know what type it is
+    // This is done so you can call push on the form array
+    (<FormArray>this.recipeForm.get("ingredients")).push(
+      new FormGroup({ name: new FormControl(), amount: new FormControl() })
+    );
   }
 
   // This getter is needed in Angular 8 to get accesses to the controls to loop through on the ingredients form controls in the html
