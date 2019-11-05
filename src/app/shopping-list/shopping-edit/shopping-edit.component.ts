@@ -66,6 +66,7 @@ export class ShoppingEditComponent implements OnInit, OnDestroy {
   }
 
   onDelete() {
+    // note that the delete button is hidden if not in edit mode to prevent errors if deleting while adding or form is blank
     this.shoppingListService.deleteIngredient(this.editedItemIndex);
     this.onClear();
   }
