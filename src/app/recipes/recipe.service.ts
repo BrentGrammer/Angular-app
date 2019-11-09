@@ -14,6 +14,13 @@ export class RecipeService {
    *
    * Use this to emit the new recipes array in the addRecipe and updateRecipe methods in this service.
    *
+   * Note Gotcha: This service needs to be added to a Providers list in the app.module.ts instead of in the recipes parent component
+   * to avoid it being destroyed when navigating away from components in the recipe heirarchy using it.  This prevents a bug where
+   * navigating back to the list causes the instance of this service to be destroyed since the form is in the children on the
+   * recipes component routing module.
+   * You need to place it in the top level module so it survives when recipes parent component is destroyed when navigating outside
+   * of it's heirarchy (i.e. to the shopping-list page)
+   *
    */
   recipesChanged = new Subject<Recipe[]>();
   recipeSelected = new EventEmitter<Recipe>();
