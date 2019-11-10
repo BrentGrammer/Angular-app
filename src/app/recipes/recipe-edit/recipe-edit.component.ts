@@ -46,6 +46,11 @@ export class RecipeEditComponent implements OnInit {
     );
   }
 
+  onDeleteIngredient(index: number) {
+    // cast the ingredients as a form array so typescript recognizes formarray methods on it like push etc.
+    (<FormArray>this.recipeForm.get("ingredients")).removeAt(index);
+  }
+
   // Determine whether to populate the form for editing or for creating a new entry based on the edit mode
   // also add validation here to controls
   // Call this whenever the route params change (in subscription callback to route.params above) which indicates the page is reloaded
