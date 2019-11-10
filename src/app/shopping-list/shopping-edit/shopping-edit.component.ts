@@ -11,7 +11,7 @@ import { Subscription } from "rxjs";
 })
 export class ShoppingEditComponent implements OnInit, OnDestroy {
   // Get a reference to the edit form in the html to assign item being edited data to
-  @ViewChild("f") shoppingListForm: NgForm;
+  @ViewChild("f", { static: true }) shoppingListForm: NgForm;
   // store the subscription for clean up if component is destroyed
   subscription: Subscription;
   // this is set to determine what should be done when the form is submiteed - should we create a new item or

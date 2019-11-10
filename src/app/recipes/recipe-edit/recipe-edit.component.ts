@@ -2,7 +2,6 @@ import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute, Params, Router } from "@angular/router";
 import { FormGroup, FormControl, FormArray, Validators } from "@angular/forms";
 import { RecipeService } from "../recipe.service";
-
 @Component({
   selector: "app-recipe-edit",
   templateUrl: "./recipe-edit.component.html",
@@ -23,7 +22,8 @@ export class RecipeEditComponent implements OnInit {
     this.route.params.subscribe((params: Params) => {
       this.id = +params["id"];
       // check if there is an id set in dynamic route param, if not then edit mode is false and item is new and not an edit
-      this.editMode = params["id"] !== null;
+      // this.editMode = params["id"] != null; // make sure to use loose equality here and not strict to prevent breaking form.
+      this.editMode = params["id"] ? true : false; // use truthiness instead of comparison - strict equality was breaking the form and loose equality did work
       this.initForm();
     });
   }
@@ -79,7 +79,6 @@ export class RecipeEditComponent implements OnInit {
         }
       }
     }
-
     // Add validation here to controls
     this.recipeForm = new FormGroup({
       name: new FormControl(recipeName, Validators.required),
