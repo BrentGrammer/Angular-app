@@ -58,6 +58,16 @@ export class RecipeService {
     this.recipesChanged.next(this.recipes.slice());
   }
 
+  // setRecipes is called after a component gets data from the db and wants to update the recipes service
+  setRecipes(recipes: Recipe[]) {
+    console.log("rec servoice");
+    this.recipes = recipes;
+    console.log("rescipes", recipes);
+
+    // inform subscribed components of the update and emit a copy
+    this.recipesChanged.next(this.recipes.slice());
+  }
+
   // called when recipe edit form is submitted
   updateRecipe(index: number, newRecipe: Recipe) {
     this.recipes[index] = newRecipe;

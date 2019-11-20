@@ -25,6 +25,7 @@ export class RecipeListComponent implements OnInit, OnDestroy {
     // store the subscription to the custom Subject created in recipe service to unsubscribe from it when component is destroyed
     this.subscription = this.recipeService.recipesChanged.subscribe(
       (recipes: Recipe[]) => {
+        console.log("recipes from subs", this.recipes);
         this.recipes = recipes;
       }
     );
