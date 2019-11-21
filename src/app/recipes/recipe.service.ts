@@ -4,7 +4,7 @@ import { Ingredient } from "../shared/ingredient.model";
 import { ShoppingListService } from "../shopping-list/shoppingList.service";
 import { Subject } from "rxjs";
 
-@Injectable()
+@Injectable({ providedIn: "root" })
 export class RecipeService {
   /**
    * Because the recipes array returned in getRecipes here is a copy used by recipe list in ngInit, you need to create a subject
@@ -60,10 +60,7 @@ export class RecipeService {
 
   // setRecipes is called after a component gets data from the db and wants to update the recipes service
   setRecipes(recipes: Recipe[]) {
-    console.log("rec servoice");
     this.recipes = recipes;
-    console.log("rescipes", recipes);
-
     // inform subscribed components of the update and emit a copy
     this.recipesChanged.next(this.recipes.slice());
   }

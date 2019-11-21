@@ -11,7 +11,6 @@ export class HeaderComponent {
   onSelect(feature: string) {}
 
   onSaveData() {
-    console.log("called");
     this.dataStorageService.storeRecipes();
   }
 
