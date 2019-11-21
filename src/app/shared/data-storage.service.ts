@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { RecipeService } from "../recipes/recipe.service";
 import { Recipe } from "../recipes/recipe.model";
+import { map } from "rxjs/operators";
 /**
  * Service for working with http requests
  *
@@ -31,6 +32,17 @@ export class DataStorageService {
     // otherwise it just sees it as a response body: any which will cause a ts error when passing in recipes to setRecipes
     this.http
       .get<Recipe[]>(`${this.BASE_URL}/recipes.json`)
+      .pipe(
+        map(recipes => {
+          return recipes.map(recipe => {
+            // this prevents errors in case ingredients are null - used as a null check
+            return {
+              ...recipe,
+              ingredients: recipe.ingredients ? recipe.ingredients : []
+            };
+          });
+        })
+      )
       .subscribe(recipes => {
         // Use the recipe service to update the list.
         // The recipe service then emits the new list to interested and subscribed components.

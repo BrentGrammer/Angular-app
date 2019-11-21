@@ -26,12 +26,12 @@ export class RecipeService {
   recipeSelected = new EventEmitter<Recipe>();
 
   private recipes: Recipe[] = [
-    new Recipe(
-      "test recipe",
-      "test description",
-      "https://cdn.pixabay.com/photo/2016/01/03/17/59/bananas-1119790__340.jpg",
-      [new Ingredient("Meat", 1), new Ingredient("eggs", 20)]
-    )
+    // new Recipe(
+    //   "test recipe",
+    //   "test description",
+    //   "https://cdn.pixabay.com/photo/2016/01/03/17/59/bananas-1119790__340.jpg",
+    //   [new Ingredient("Meat", 1), new Ingredient("eggs", 20)]
+    // )
   ];
 
   constructor(private slService: ShoppingListService) {}
