@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { RecipeService } from "../recipes/recipe.service";
 import { Recipe } from "../recipes/recipe.model";
-import { map } from "rxjs/operators";
+import { map, tap } from "rxjs/operators";
 /**
  * Service for working with http requests
  *
@@ -30,23 +30,24 @@ export class DataStorageService {
   fetchRecipes() {
     // add generic annotation to tell ts that the recipes in the response subscribe callback is of type Recipe[],
     // otherwise it just sees it as a response body: any which will cause a ts error when passing in recipes to setRecipes
-    this.http
-      .get<Recipe[]>(`${this.BASE_URL}/recipes.json`)
-      .pipe(
-        map(recipes => {
-          return recipes.map(recipe => {
-            // this prevents errors in case ingredients are null - used as a null check
-            return {
-              ...recipe,
-              ingredients: recipe.ingredients ? recipe.ingredients : []
-            };
-          });
-        })
-      )
-      .subscribe(recipes => {
-        // Use the recipe service to update the list.
-        // The recipe service then emits the new list to interested and subscribed components.
+    /**
+     * the Observable here is returned so that the recipes-resolver.service.ts can subscribe to it to act as a guard
+     * to make sure that components depending on having recipes available and fetched will get them without a manual fetch
+     */
+    return this.http.get<Recipe[]>(`${this.BASE_URL}/recipes.json`).pipe(
+      map(recipes => {
+        return recipes.map(recipe => {
+          // this prevents errors in case ingredients are null - used as a null check
+          return {
+            ...recipe,
+            ingredients: recipe.ingredients ? recipe.ingredients : []
+          };
+        });
+      }),
+      tap(recipes => {
+        // tap into the request data to set it to the recipes list and the recipes resolver will take the Observable returned and subscribe to it
         this.recipeService.setRecipes(recipes);
-      });
+      })
+    );
   }
 }

@@ -16,6 +16,7 @@ export class HeaderComponent {
 
   // Once data is fetched, the service also calls on the recipes service to update the list with the fetched data
   onFetchData() {
-    this.dataStorageService.fetchRecipes();
+    // no function passed to subscribe because the header component doesn't care about the response data
+    this.dataStorageService.fetchRecipes().subscribe();
   }
 }
