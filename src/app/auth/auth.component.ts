@@ -1,6 +1,7 @@
 import { Component } from "@angular/core";
 import { NgForm } from "@angular/forms";
-import { AuthService } from "./auth.service";
+import { AuthService, AuthResponseData } from "./auth.service";
+import { Observable } from "rxjs";
 
 @Component({
   templateUrl: "./auth.component.html",
@@ -29,25 +30,31 @@ export class AuthComponent {
     }
     const { email, password } = form.value;
 
+    // since the subscription logic for signin/up is the same, this holds that logic so you can just call it one time
+    let authObservable: Observable<AuthResponseData>;
+
     // set loading flag to show spinner
     this.isLoading = true;
 
     if (this.isLoginMode) {
-      //...
+      authObservable = this.authService.login(email, password);
     } else {
       // subscribe to the observable from the auth service
-      this.authService.signup(email, password).subscribe(
-        resData => {
-          console.log(resData);
-          this.isLoading = false;
-        },
-        errorMessage => {
-          // aervice uses pipe with catch/throwError operators to return an observable in an error case
-          this.error = errorMessage;
-          this.isLoading = false;
-        }
-      );
+      authObservable = this.authService.signup(email, password);
     }
+
+    // subscribe logic done once after the observable is returned from login or signup
+    authObservable.subscribe(
+      resData => {
+        console.log(resData);
+        this.isLoading = false;
+      },
+      errorMessage => {
+        // aervice uses pipe with catch/throwError operators to return an observable in an error case
+        this.error = errorMessage;
+        this.isLoading = false;
+      }
+    );
     form.reset();
   }
 }
