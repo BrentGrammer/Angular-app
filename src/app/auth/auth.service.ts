@@ -25,7 +25,11 @@ const API_KEY = "AIzaSyAKfSJsIDG4A0__gCkhibuWfJSG18hqS5s";
 // use the shortcut for providing it in app module
 @Injectable({ providedIn: "root" })
 export class AuthService {
-  // store as a subject to be able to next the user when logging in/signing out etc in the handlers to emit the user
+  /**
+   *  store as a subject to be able to next the user when logging in/signing out etc in the handlers to emit the user
+   *    - This will serve as a source of truth the app can subscribe to to see if a user exists and is logged in
+   *      - used in the header component for example to determine which nav links to show
+   *  */
   user = new Subject<User>();
 
   // inject the HttpClient module to make requests to firebase

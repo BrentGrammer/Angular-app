@@ -1,4 +1,5 @@
 import { Component } from "@angular/core";
+import { Router } from "@angular/router";
 import { NgForm } from "@angular/forms";
 import { AuthService, AuthResponseData } from "./auth.service";
 import { Observable } from "rxjs";
@@ -16,8 +17,8 @@ export class AuthComponent {
   error: string = null;
 
   // inject the auth service to handle signing in and signing up the user etc
-
-  constructor(private authService: AuthService) {}
+  // inject the router to handle redirecting after user is logged in
+  constructor(private authService: AuthService, private router: Router) {}
 
   //called from ui when switch button is clicked to change/toggle the isLoginMode property:
   onSwitchMode() {
@@ -48,6 +49,7 @@ export class AuthComponent {
       resData => {
         console.log(resData);
         this.isLoading = false;
+        this.router.navigate(["/recipes"]);
       },
       errorMessage => {
         // aervice uses pipe with catch/throwError operators to return an observable in an error case
