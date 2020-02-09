@@ -33,7 +33,7 @@ export class AuthService {
    *
    * **BehaviorSubject is used so that protected methods/components (like the data-storage service) can access the user token
    *   after user has already been emitted when logging in.
-   *   Behavior Subject is used for this because it allows access to a previously emitted value.
+   *   Behavior Subject is used for this because it allows access to a previously emitted value (the user).
    *  */
   user = new BehaviorSubject<User>(null);
 
@@ -66,6 +66,33 @@ export class AuthService {
       );
   }
 
+  // run this in app.component.ts (runs early in app lifecycle) to relogin user on refresh of app if logged in and token is valid
+  autoLogin() {
+    // stored as string in local storage so need to parse it to object
+    const userData: {
+      email: string;
+      id: string;
+      _token: string;
+      _tokenExpirationDate: string; // parsed as a string from localstorage not a Date object as in the model
+    } = JSON.parse(localStorage.getItem("userData"));
+    if (!userData) {
+      return;
+    }
+    const { email, id, _token, _tokenExpirationDate } = userData;
+    const loadedUser = new User(
+      email,
+      id,
+      _token,
+      new Date(_tokenExpirationDate)
+    );
+
+    // check if token is valid - getter returns null if expiration date is past
+    if (loadedUser.token) {
+      //emit user to app if token is present
+      this.user.next(loadedUser);
+    }
+  }
+
   logout() {
     this.user.next(null);
     // redirecting is done here and not in the component since logging out can occur from outside of the component in other places
@@ -95,7 +122,7 @@ export class AuthService {
       );
   }
 
-  /** Runs when the user is successfully logged in to Firebase - creates a user to emit to the app */
+  /** Runs when the user is successfully logged in to Firebase after request - creates a user to emit to the app and store in localstorage*/
   private handleAuthentication(
     email: string,
     userId: string,
@@ -113,6 +140,8 @@ export class AuthService {
 
     // use the Subject created in the user prop to emit the logged in user throughout the app by calling next on the property:
     this.user.next(user);
+    // store user in local storage to persist after app refresh:
+    localStorage.setItem("userData", JSON.stringify(user));
   }
 
   // method for error handling since the logic is the same for either signing up or logging in
