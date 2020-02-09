@@ -1,8 +1,9 @@
 import { Injectable } from "@angular/core";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
-import { catchError } from "rxjs/operators";
+import { catchError, tap } from "rxjs/operators";
 // throwError is used in the error handling to return an observable since the auth component is subscribed and expects an observable in the error handling code
-import { throwError } from "rxjs";
+import { throwError, Subject } from "rxjs";
+import { User } from "./user.model";
 
 /**
  * This auth service deals with sending requests to firebase to signup/in users and managing the user token
@@ -24,6 +25,9 @@ const API_KEY = "AIzaSyAKfSJsIDG4A0__gCkhibuWfJSG18hqS5s";
 // use the shortcut for providing it in app module
 @Injectable({ providedIn: "root" })
 export class AuthService {
+  // store as a subject to be able to next the user when logging in/signing out etc in the handlers to emit the user
+  user = new Subject<User>();
+
   // inject the HttpClient module to make requests to firebase
   constructor(private http: HttpClient) {}
 
@@ -43,7 +47,14 @@ export class AuthService {
           returnSecureToken: true
         }
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        catchError(this.handleError),
+        tap(resData => {
+          // create a new user - tap used for this - does not alter response data, just taps into the flow to do something with it
+          const { localId, idToken, email, expiresIn } = resData;
+          this.handleAuthentication(email, localId, idToken, expiresIn);
+        })
+      );
   }
 
   login(email: string, password: string) {
@@ -59,7 +70,33 @@ export class AuthService {
           returnSecureToken: true
         }
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        catchError(this.handleError),
+        tap(resData => {
+          const { localId, idToken, email, expiresIn } = resData;
+          this.handleAuthentication(email, localId, idToken, expiresIn);
+        })
+      );
+  }
+
+  /** Runs when the user is successfully logged in to Firebase - creates a user to emit to the app */
+  private handleAuthentication(
+    email: string,
+    userId: string,
+    idToken: string,
+    expiresIn: string
+  ) {
+    // create a date for the expiration date - this is not included in the response.  Firebase sends expiresIn which is the number of seconds until the token expires
+    const currentDateInMilliSecs = new Date().getTime();
+    // + converts expiresIn (string in seconds) to a number
+    const expiresInMillisecs = +expiresIn * 1000;
+    // wrap time millisecs in Date to turn it into a date object
+    const expiration = new Date(currentDateInMilliSecs + expiresInMillisecs);
+    // comes from localId: generated user id from the response from firebase
+    const user = new User(email, userId, idToken, expiration);
+
+    // use the Subject created in the user prop to emit the logged in user throughout the app by calling next on the property:
+    this.user.next(user);
   }
 
   // method for error handling since the logic is the same for either signing up or logging in

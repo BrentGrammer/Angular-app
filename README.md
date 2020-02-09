@@ -1,4 +1,4 @@
-# Recipe App build with Angular 8 following Maximillian Schwarzmueller's Udemy course
+# Recipe App built with Angular 8 following Maximillian Schwarzmueller's Udemy course
 
 **NOTE** The code is heavily commented in places to use as a reference. This may be helpful to you if you are learning Angular.
 
@@ -14,6 +14,6 @@
 - RxJs Observables
 - RxJs Subjects
 - RxJs Operators
-  - pipe, map, catchError, throwError
+  - pipe, map, tap, catchError, throwError
 - Angular Router Module
 - Authentication with Firebase
