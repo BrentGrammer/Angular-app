@@ -94,12 +94,13 @@ export class AuthService {
       this.user.next(loadedUser);
       // start timer to check expiration of token
       this.autoLogout(
-        new Date().getTime() - new Date(_tokenExpirationDate).getTime()
+        new Date(_tokenExpirationDate).getTime() - new Date().getTime()
       );
     }
   }
 
   logout() {
+    console.log("logout");
     this.user.next(null);
     // redirecting is done here and not in the component since logging out can occur from outside of the component in other places
     // (i.e. automatically logging out after expired token, etc)
@@ -116,6 +117,7 @@ export class AuthService {
   // duration is in millisecs - the function to logout is called after this time elapses
   // this needs to be called whenever a new user is emitted to the app (in autlogin and handleAuthentication())
   autoLogout(expirationDuration: number) {
+    console.log("autologout");
     // store timer to clear it on logout
     this.tokenExpirationTimer = setTimeout(() => {
       this.logout();
