@@ -1,17 +1,55 @@
 <div class="row">
   <div class="col-xs-12 col-md-6 col-md-offset-3">
-    <form>
+    <div class="alert alert-danger" *ngIf="error">
+      <p>{{ error }}</p>
+    </div>
+    <div *ngIf="isLoading" style="text-align: center;">
+      <app-loading-spinner></app-loading-spinner>
+    </div>
+    <form #authForm="ngForm" (ngSubmit)="onSubmit(authForm)" *ngIf="!isLoading">
       <div class="form-group">
         <label for="email">Email</label>
-        <input type="email" name="email" class="form-control" />
+        <!-- Using the template driven form approach - put ngModel on input and give a name and use builtin ng validators required etc -->
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          ngModel
+          name="email"
+          required
+          email
+        />
       </div>
       <div class="form-group">
         <label for="password">password</label>
-        <input type="password" name="password" class="form-control" />
+        <input
+          type="password"
+          name="password"
+          class="form-control"
+          ngModel
+          name="password"
+          required
+          minlength="6"
+        />
       </div>
       <div>
-        <button class="button btn-primary">Sign up</button> |
-        <button class="button btn-primary">Switch to Login</button>
+        <button
+          class="button btn-primary"
+          type="submit"
+          [disabled]="!authForm.valid"
+        >
+          {{ isLoginMode ? "Login" : "Signup" }}
+        </button>
+        |
+        <!-- remember to change types of buttons to button or submit so that the correct one submits the form only 
+             if the button does not have a type="button" on it then it will submit the form and create a unecessary http request-->
+        <button
+          class="button btn-primary"
+          (click)="onSwitchMode()"
+          type="button"
+        >
+          Switch to {{ isLoginMode ? "Signup" : "Login" }}
+        </button>
       </div>
     </form>
   </div>
