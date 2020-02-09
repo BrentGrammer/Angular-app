@@ -13,7 +13,9 @@
 - Http Requests: HttpClient Module
 - RxJs Observables
 - RxJs Subjects
+  - Subject
+  - BehaviorSubject
 - RxJs Operators
-  - pipe, map, tap, catchError, throwError
+  - pipe, map, tap, catchError, throwError, take, exhaustMap
 - Angular Router Module
 - Authentication with Firebase

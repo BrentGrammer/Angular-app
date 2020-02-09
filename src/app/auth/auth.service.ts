@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { catchError, tap } from "rxjs/operators";
 // throwError is used in the error handling to return an observable since the auth component is subscribed and expects an observable in the error handling code
-import { throwError, Subject } from "rxjs";
+import { throwError, Subject, BehaviorSubject } from "rxjs";
 import { User } from "./user.model";
 
 /**
@@ -29,8 +29,12 @@ export class AuthService {
    *  store as a subject to be able to next the user when logging in/signing out etc in the handlers to emit the user
    *    - This will serve as a source of truth the app can subscribe to to see if a user exists and is logged in
    *      - used in the header component for example to determine which nav links to show
+   *
+   * **BehaviorSubject is used so that protected methods/components (like the data-storage service) can access the user token
+   *   after user has already been emitted when logging in.
+   *   Behavior Subject is used for this because it allows access to a previously emitted value.
    *  */
-  user = new Subject<User>();
+  user = new BehaviorSubject<User>(null);
 
   // inject the HttpClient module to make requests to firebase
   constructor(private http: HttpClient) {}
