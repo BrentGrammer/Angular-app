@@ -37,6 +37,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.dataStorageService.storeRecipes();
   }
 
+  onLogout() {
+    this.authService.logout();
+    // Note: redirecting is done in the service instead of the component since there could be other places the logout is called from (i.e.
+    // automatically logging out)
+  }
+
   // Once data is fetched, the service also calls on the recipes service to update the list with the fetched data
   onFetchData() {
     // no function passed to subscribe because the header component doesn't care about the response data

@@ -4,6 +4,7 @@ import { catchError, tap } from "rxjs/operators";
 // throwError is used in the error handling to return an observable since the auth component is subscribed and expects an observable in the error handling code
 import { throwError, Subject, BehaviorSubject } from "rxjs";
 import { User } from "./user.model";
+import { Router } from "@angular/router";
 
 /**
  * This auth service deals with sending requests to firebase to signup/in users and managing the user token
@@ -37,7 +38,7 @@ export class AuthService {
   user = new BehaviorSubject<User>(null);
 
   // inject the HttpClient module to make requests to firebase
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   // sends request to firebase url to sign user up: Needs Angular HttpClient to do this
   signup(email: string, password: string) {
@@ -63,6 +64,13 @@ export class AuthService {
           this.handleAuthentication(email, localId, idToken, expiresIn);
         })
       );
+  }
+
+  logout() {
+    this.user.next(null);
+    // redirecting is done here and not in the component since logging out can occur from outside of the component in other places
+    // (i.e. automatically logging out after expired token, etc)
+    this.router.navigate(["/auth"]);
   }
 
   login(email: string, password: string) {
