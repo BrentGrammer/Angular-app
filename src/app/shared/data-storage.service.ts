@@ -41,17 +41,13 @@ export class DataStorageService {
      *
      * this only gets the data from the user on demand whenever this request is made and run.
      *
-     * exhaustMap turns the final returned observable into an http observable after the user subject observable completes.
+     * map and tap simply are added to the pipe as operations that continue in the flow after that.
+     *
+     * The interceptor in auth-interceptor.service.ts is adding the user token to the request for firebase
      *
      * */
-    return this.authService.user.pipe(
-      take(1),
-      exhaustMap(user => {
-        // add user token to request
-        return this.http.get<Recipe[]>(`${this.BASE_URL}/recipes.json`, {
-          params: new HttpParams().set("auth", user.token)
-        });
-      }),
+
+    return this.http.get<Recipe[]>(`${this.BASE_URL}/recipes.json`).pipe(
       map((recipes: Recipe[]) => {
         return recipes.map(recipe => {
           // this prevents errors in case ingredients are null - used as a null check
