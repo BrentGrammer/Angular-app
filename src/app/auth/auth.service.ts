@@ -36,6 +36,8 @@ export class AuthService {
    *   Behavior Subject is used for this because it allows access to a previously emitted value (the user).
    *  */
   user = new BehaviorSubject<User>(null);
+  // store timer keeping track of token expiration in auto logout to clear it when user logs out
+  private tokenExpirationTimer: any;
 
   // inject the HttpClient module to make requests to firebase
   constructor(private http: HttpClient, private router: Router) {}
@@ -90,6 +92,10 @@ export class AuthService {
     if (loadedUser.token) {
       //emit user to app if token is present
       this.user.next(loadedUser);
+      // start timer to check expiration of token
+      this.autoLogout(
+        new Date().getTime() - new Date(_tokenExpirationDate).getTime()
+      );
     }
   }
 
@@ -98,6 +104,22 @@ export class AuthService {
     // redirecting is done here and not in the component since logging out can occur from outside of the component in other places
     // (i.e. automatically logging out after expired token, etc)
     this.router.navigate(["/auth"]);
+    // clear localstorage of user data:
+    localStorage.removeItem("userData");
+    if (this.tokenExpirationTimer) {
+      clearTimeout(this.tokenExpirationTimer);
+    }
+    this.tokenExpirationTimer = null;
+  }
+
+  // sets and manages a timer to log out user if token expires
+  // duration is in millisecs - the function to logout is called after this time elapses
+  // this needs to be called whenever a new user is emitted to the app (in autlogin and handleAuthentication())
+  autoLogout(expirationDuration: number) {
+    // store timer to clear it on logout
+    this.tokenExpirationTimer = setTimeout(() => {
+      this.logout();
+    }, expirationDuration);
   }
 
   login(email: string, password: string) {
@@ -140,6 +162,8 @@ export class AuthService {
 
     // use the Subject created in the user prop to emit the logged in user throughout the app by calling next on the property:
     this.user.next(user);
+    // start autologout timer to check expiration:
+    this.autoLogout(+expiresIn * 1000);
     // store user in local storage to persist after app refresh:
     localStorage.setItem("userData", JSON.stringify(user));
   }
