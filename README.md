@@ -19,3 +19,6 @@
   - pipe, map, tap, catchError, throwError, take, exhaustMap
 - Angular Router Module
 - Authentication with Firebase
+- Dynamic Components
+  - Declarative Approach (ngIf)
+  - Imperative Approach
