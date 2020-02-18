@@ -1,0 +1,85 @@
+
+OPERATORS:
+
+-Used when you want to transform data passed to the observer from the Observable and keep the logic separate
+
+-There are multiple operators provided by RxJS (map is popular for example) 
+
+-use the .pipe() method - every Observable has a .pipe() method on it. Pass in an operator to use
+-chain pipe onto the observable before subscribe is called
+
+
+1) import the operators you want to use from rxjs/operators:
+
+2) Call pipe on the observable and pass in the operator used to transform the data emitted:
+  *Chain this onto the observable before calling subscribe on the Observable
+
+  this.firstObsSubscription = customIntervalObservable
+      .pipe(
+        map((data: number) => {
+          return "Round: " + (data + 1);
+        })
+      )
+      .subscribe(
+        ...
+      );
+  }
+
+-You can also pass in multiple operators as additional arguments to pipe:
+
+    this.firstObsSubscription = customIntervalObservable
+      .pipe(
+        filter(data => { return data > 0; }), 
+        map((data: number) => {...}
+      )
+      .subscribe(data => {
+        ...
+      }, error => {
+        ...
+      }, () => {
+        ...
+      });
+
+  ========
+
+  TAKE:
+
+  - useful if you do not need an ongoing subscription to a subject/observable
+
+  - take only 1 emission from a subject/behaviorSubject and then automatically unsubscribe:
+
+  Example:
+
+      this.authService.user.pipe(take(1)).subscribe(user => {
+        ...
+      });
+
+  ------
+
+  EXHAUSTMAP:
+
+  - Can be used inside pipe as a second arg to wait for a previous observable in pipe to complete and then return another 
+    observable finally after the first one is done.
+
+    -see data-storage.service.ts in recipes app for example.
+      - take will handle the user observable and unsubscribe automatically, then exhaustMap turns the overall observable returned
+        into the http observable
+
+  Ex:
+
+  fetchRecipes() {
+    return this.authService.user.pipe(
+      take(1),
+      exhaustMap(user => {
+        // final observable returned becomes this after user observable completes:
+        return this.http.get<Recipe[]>(`${this.BASE_URL}/recipes.json`, {
+          params: new HttpParams().set('auth', user.token)
+        });
+      }),
+      map((recipes: Recipe[]) => {
+       ...return mapped recipes
+      }),
+      tap(recipes => {
+        ....update ui/other service with mapped recipes
+      })
+    );

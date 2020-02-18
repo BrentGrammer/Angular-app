@@ -1,0 +1,114 @@
+SET UP AN ANGULAR PROJECT:
+
+Dependencies:
+
+-Node.js with npm
+-Angular CLI
+
+TO START A NEW PROJECT:
+
+1) Open a terminal and install the Angular CLI:
+  $ npm install -g @angular/cli
+  (on mac/linux, use $ sudo npm install @angular/cli)
+  -you can ignore errors if the cli installs at the end
+
+2) navigate to a folder you want your project to be in and run the ng new command:
+$ ng new my-app-name
+
+3) in the project folder, run the ng serve command to start a dev server:
+  $ ng serve
+  -the server is usually on localhost:4200 by default
+
+
+=========
+
+FOLDER STRUCTURE:
+
+Process:
+
+1) main.ts runs (tells angular to bootstrap an app with a module passed in)
+2) The module passed in to main.ts bootstraps the app with an array of components
+3) The app.component.ts tells angular where/what element to insert the JS code with the selector property
+
+**The first code that gets executed when an Angular app loads is in the main.ts file
+This line starts the project by passing an app module (from a component like app.module.ts):
+platformBrowserDynamic().bootstrapModule(AppModule)
+  .catch(err => console.error(err));
+
+-The app/app.module.ts file:
+  The bootstrap property in the file tells angular what components should be known to the app (i.e. the main component):
+    bootstrap: [AppComponent]
+    declarations: Array of registered components for the app (add new components created here)
+    imports: modules to use in the app
+
+
+Components:
+-In src/app folder 
+-all components have a html template file, possibly a css style file, and a typescript file which is the definition
+of the component (and converted to JavaScript later)
+-there is also an app.module.ts file where you tell Angular which modules in angular you want to add to your app.
+(Angular is made up of modules which you have to pull in to use features)
+
+app.component.* is the root component of the application created by the angular cli - it ties together all of the other components
+in the application
+
+THE TYPSECRIPT COMPONENT FILE (i.e. app.component.ts):
+
+selector: "Name of the element in html to manipulate" // i.e. <app-root></app-root> in the index.html
+templateUrl: 'path/to/html/template/file' // i.e. app.component.html
+
+---
+
+IMPORTING AN ANGULAR MODULE:
+
+-In the components app.module.ts file, import the module you want at the top of the file from angular and add it to the 
+imports object:
+
+import { FormsModule } from '@angular/forms';
+
+@NgModule({
+  declarations: [
+    AppComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+
+---
+
+INSTALL BOOTSTRAP FOR PORJECT:
+
+-npm install --save bootstrap
+
+-In the angular.json file for the project, change the default styles in architect.build.styles block array and add an
+entry for bootstrap:
+Ex:
+    "styles": [
+      "node_modules/bootstrap/dist/css/bootstrap.min.css", //--> ADD THIS TO POINT TO YOUR DIST BUILD FOR BOOTSTRAP
+      "src/styles.css"
+    ],
+
+Note:
+when using a project created with Angular CLI 6+ (check via ng -v ), you'll have an angular.json  file instead of an .angular-cli.json  file. In that file, you still need to add Bootstrap to the styles[]  array if using bootstrap
+
+the path should be node_modules/bootstrap/dist/css/bootstrap.min.css , NOT ../node_modules/bootstrap/dist/css/bootstrap.min.css . 
+The leading ../  must not be included.
+
+    ==============
+
+
+    TROUBLESHOOTING:
+
+    $ ng serve errors:
+    -If you get an angular project is not defined, then do npm install in the project and then run ng serve
+
+ 
+
+
+
+
+

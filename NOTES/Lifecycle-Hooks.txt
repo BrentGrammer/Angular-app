@@ -1,0 +1,83 @@
+LIFECYCLE HOOKS:
+
+-Angular will execute these methods with the corresponding lifecycle event if they are present in the ts file class for 
+the component:
+
+component lifecycle hooks in order of operation:
+
+ngOnChanges() - when the component mounts and anytime any @Input decorated property changes.  Takes in changes object 
+                which grants access to props such as firstChange, currentValue, previousValue.
+ngOnInit() - when a component is initialized (before it is displayed on the DOM, only the object was created and runs after
+             the constructor).  Most initialization should be done here and NOT in the constructor.
+ngDoCheck() - runs whenever any change detection CHECK occurs (could be very frequent) - runs whenever Angular checks
+              to see if it needs to rerender part of the component - on trigger events, any prop change etc. could be 
+              useful to manually tell Angular about a change that it wouldn't detect otherwise.
+
+ngAfterContentInit() - runs after <ng-content> content has been projected into tnto the view.
+ngAfterContentChecked() - runs everytime change detection occurs on the <ng-content> content
+
+ngAfterViewInit() - runs after the component (and child components) has been rendered
+ngAfterViewChecked() - runs after change detection runs on the rendered component
+
+ngOnDestroy() - called right before the component object is destroyed and removed from the DOM.  Good place for cleanup.
+
+**Best practice is to implement the lifecycle interfaces explicitly in your component's ts file (required importing the 
+  interfaces from Angular)  
+
+  Ex:
+
+  export class ServerElementComponent
+  implements
+    OnInit,
+    OnChanges,
+    DoCheck,
+    AfterContentInit,
+    AfterContentChecked,
+    AfterViewInit,
+    AfterViewChecked,
+    OnDestroy {
+  // arg is what you can name the exposed prop outside the component
+  // you access it in the parent as [srvElement] and then assign it a value in the parent
+  @Input("srvElement") element: { type: string; name: string; content: string };
+
+  constructor() {}
+
+  // every time @Input prop changes
+  ngOnChanges(changes: SimpleChanges) {
+    console.log("ngOnChanges run", changes);
+  }
+
+  ngOnInit() {
+    console.log("ngoninit called");
+  }
+
+  ngDoCheck() {
+    console.log("ngDoCheck called");
+  }
+
+  ngAfterContentInit() {
+    console.log("after content init called");
+  }
+
+  ngAfterContentChecked() {
+    console.log("after content checked called");
+  }
+
+  ngAfterViewInit() {
+    console.log("after view init called");
+  }
+
+  ngAfterViewChecked() {
+    console.log("after view checked called");
+  }
+
+  ngOnDestroy() {
+    console.log("on Destroy called");
+  }
+}
+
+
+
+
+
+

@@ -1,0 +1,52 @@
+AUTHENTICATION:
+
+
+-Note: in an Angular app, sessions cannot be used like with a server side rendering web app.  The server and client
+       are decoupled and communicate through Angular's HTTPClient module.
+       Since communication is usually with a RESTful or GraphQL API which are stateless, sessions cannot be utilized for auth
+
+       Main flow:
+
+       - Auth info sent from client to server
+       - Server validates auth info reveived
+       - An encoded (not encrypted) token is sent back to the client (the client can unwrap an encoded token)
+       - Client stores token (i.e. in local storage)
+       - Client sends token with each request
+       - Server can validate the token with a secret.
+
+       Because the token is generated with a certain algorithm and secret on the server, if the client modified the token,
+       the algorithm with the secret to decode the token will fail.
+
+
+Create a service to handle signing in and signing up users and managing tokens if necessary:
+
+see src/app/auth/auth.service.ts
+
+- Create a User Model class and in the Auth Service store an instance in a property as a Subject which you can emit throughout 
+  the app after the user is successfully logged in - see src/app/auth/auth.service.ts and user.model.ts
+
+    - the User Subject functions as the source of the truth for the app to know if a user exists and is logged in
+      - the user emitted in the Subject will be null if not logged in, and will exist if logged in
+    - Components can subscribe to the User Subject by injecting the auth service and subscribing to user in their ngOnInit()
+
+- Use Interceptor service to inject auth tokens into requests: see auth-interceptor.service.ts file
+
+
+LOGOUT:
+  - Redirect the user in the auth service after logging out, not the component since there are other places the user can 
+    be logged out (i.e automatically logged out from expired token etc.)
+
+    -see auth.service.ts and header.component.ts
+
+
+PERSISTING LOGGED IN USER ON REFRESH:
+
+- use localStorage to store the user data for the logged in user in the auth service after emitting user to app
+- see handleAuthentication method in auth-service.ts
+
+- create an autoLogin() method to check localstorage and log the user in if there is valid userdata stored in localstorage
+- in app.component.ts or early in app lifecycle call autologin from the auth service in the ngOnInit()
+
+
+
+

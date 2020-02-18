@@ -1,0 +1,229 @@
+OBSERVABLES:
+
+List of changes in RxJS 6 which Angular 6+ uses for reference if using older versions:
+https://academind.com/learn/javascript/rxjs-6-what-changed/
+
+-Angular has RxJs built in to use observables.
+
+-***You need to unsubscribe from subscriptions to observables in ngOnDestroy for example. 
+Observables remain active until they are cleaned up - this can cause memory leaks
+
+**When using builtin Angular Observables, Angular does this for you, so all you need to call is .subscribe()
+
+----
+
+CREATING A CUSTOM OBSERVABLE:
+-One of the easiest ways is using Angular's RxJS built in interval function
+
+-subscribe takes 3 args (all functions)
+.subscribe(newDataHandler: fn, errorHandler: fn, completeHandler: fn)
+
+
+
+1) import { interval, Subscription } from 'rxjs'
+
+2) In your component typescript class file, use interval to fire an event every x milliseconds.
+   subcribe to interval with .subscribe and get the event fired in the argument:
+
+    ngOnInit() {
+    this.firstObsSubscription = interval(1000).subscribe(count => {
+      console.log(count);
+    });
+  }
+
+3) To clean up the observable, store subscriptions:
+  -.subscribe() returns a subscription which you can then store in the class
+
+export class HomeComponent implements OnInit, OnDestroy {
+
+  private firstObsSubscription: Subscription;
+
+   ....
+
+  ngOnInit() {
+    this.firstObsSubscription = interval(1000).subscribe(count => {
+      console.log(count);
+    });
+  }
+  // call unsubscribe on the stored subscription
+  ngOnDestroy(): void {
+    this.firstObsSubscription.unsubscribe();
+  }
+}
+
+---
+
+CREATE A CUSTOM OBSERVABLE:
+
+1) import { Observable } from 'rxjs';
+
+2) Create an observable with Observable.create() and assign it to a const
+  observer: a part that needs to be told when the observable is updated
+            *The observer is a listener which has 3 methods on it:
+
+                observer.next(value_To_Send_To_Observer) -- used to emit a value
+                observer.error(new Error()) -- observable dies and is unsubscribed
+                observer.complete()
+
+  -Pass in a function that receives the observer as an argument  
+  -the observer needs to be told when the value being observed is updated
+
+3) Call subscribe on the created observable that takes a function which accepts the emitted data:
+
+  ngOnInit() {
+    const customIntervalObservable = Observable.create(observer => {
+      let count = 0;
+      setInterval(() => {
+        observer.next(count);
+        count++;
+      }, 1000);
+    });
+
+    this.firstObsSubscription = customIntervalObservable.subscribe(data => {
+      console.log(data);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.firstObsSubscription.unsubscribe();
+  }
+
+  HANDLING ERRORS:
+
+  -call observer.error(new Error('msg'))
+  -pass a second argument into subscribe which is a function that takes the error thrown to the observer
+
+     ngOnInit() {
+       ...
+
+       this.firstObsSubscription = customIntervalObservable.subscibe(data => {
+         console.log(data);
+       }, (error) => {
+         //handle error
+       });
+     }
+
+---
+
+HANDLING COMPLETE:
+
+-call observer.complete() - no args
+-pass in third argument to subscribe which is a function to handle complete
+-the observable is automatically unsubscribed
+(you can always leave an unsubscribe function just in case for cleanup with no bad effect)
+
+NOTE: if an error is thrown in observer.error(), the Observable is canceled and complete will never be called
+
+const customIntervalObservable = Observable.create(observer => {
+      setInterval(() => {
+        ...
+        if (count === 2) {
+          observer.complete();
+        }
+        ...
+    });
+
+    this.firstObsSubscription = customIntervalObservable.subscribe(
+      data => {
+        console.log(data);
+      },
+      error => {
+        alert(error.message);
+      },
+      () => {
+        console.log("completed");
+      }
+    );
+  }
+
+
+  -----------
+
+
+  SUBJECTS:
+
+  -A special kind of Observable that you can actively call next on from outside (unlike a regular Observable which only 
+   has callbacks in Observable.create() where you call next inside it on the passed in observer)
+
+  -Acts like an Event Emitter that we can trigger
+
+  GOTCHA: If you are not getting subscribe callbacks to fire when subscribed to subjects, double check that you are not putting a 
+  service too low in the heirarchy or have multiple entries in differnet providers arrays in different components.
+
+  *Use Subjects to emit events and pass data across components over Event Emitters:
+  Subjects are more efficient than EventEmitters behind the scenes and also allow access to rxjs operators.
+  -If you are using @Output() then just use Event Emitters
+
+  1) Create a subject by importing it from rxjs and assigning it to a field (i.e. on a service):
+
+      ...
+      import { Subject } from "rxjs";
+
+      ...
+      export class UserService {
+        // the generic type passed is the type of data emitted by an event
+        activatedEmitter = new Subject<boolean>();
+      }
+
+  2) In component A ts file, call next on the Subject from an injected service where it's created.
+
+
+        export class UserComponent implements OnInit {
+          constructor(
+            private route: ActivatedRoute,
+            private userService: UserService
+          ) {}
+
+          ngOnInit() {}
+
+          onActivate() {
+            this.userService.activatedEmitter.next(true);  
+          }
+        }
+
+  3) In component B inject the same service and subscribe to the emitted Subject.
+     ***You must unsubscribe from a Subject manually in ngOnDestroy!
+
+        export class AppComponent implements OnInit, OnDestroy {
+          userActivated = false;
+          activatedSubscription: Subscription;
+
+          constructor(private userService: UserService) {}
+
+          ngOnInit() {
+            this.activatedSubscription = this.userService.activatedEmitter.subscribe(
+              didActivate => {
+                this.userActivated = didActivate;
+              }
+            );
+          }
+
+          ngOnDestroy(): void {
+            this.activatedSubscription.unsubscribe();
+          }
+        }
+
+---------
+
+BEHAVIORSUBJECTS:
+
+- Another kind of Subject in RxJs
+
+-Works like a Subject, except the difference is:
+  - allows subscribers to get access to the previously emitted value even if they weren't subscribed at the time that value    
+    was emitted.
+  - can be useful if components want access to a Subject or it's data after an emission has already occurred (for example, if
+    a component wanted to check a auth token on the user after they've already been logged in.  The protected component would 
+    not have access to the subject when it is changed to logged in since it is only created after the user is authenticated.
+    If it needs access to the token to send a authenticated request, it could use the behavior subject to get access to 
+    the logged in user previously emitted)
+
+    Ex:
+      user = new BehaviorSubject<User>(null); // pass in a starting value
+
+      // in the service you can then use pipe with take on the subscription to only get the value one time and automatically
+         unsubscribe after that.
+
+            Ex: this.authService.user.pipe(take(1)).subscribe();
+
+    -- see data-storage.service.ts and auth.service.ts in recipes app 

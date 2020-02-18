@@ -1,0 +1,63 @@
+MODELS:
+
+-a class that serves as a blueprint to instantiate objects
+to use in the app.
+-Use Models to create type of item that will be used in the app, for instance a group of list items stored in an array that 
+are outputted to the view in a component.  You can then reference this type in your component ts code for the items being stored
+
+-Models are created in a typescript file that exists in the component folder 
+Filename syntax:
+componentfolder/componentName.model.ts 
+
+
+CREATE A MODEL:
+
+-Create an exported class in a typescript file for the component:
+
+-designate properties of the class as public (if accessible on the object)
+-create a constructor in the class that takes in parameters and assigns them to the properties declared on the class
+
+Ex in Recipes/recipe.model.ts:
+
+export class Recipe {
+  public name: string;
+  public description: string;
+  public imagePath: string;
+
+  constructor(name: string, desc: string, imagePath: string) {
+    this.name = name;
+    this.description = desc;
+    this.imagePath = imagePath;
+  }
+}
+
+***SHORT HAND FOR CREATING PROPERTIES AND ASSIGNING THEM IN CONSTRUCTOR:
+
+-use the accessors in the argument list for the constructor - this will automatically create the properies and assign what is passed in to them:
+Ex:
+export class Recipe {
+  constructor(public name: string, public desc: string, public imagePath: string) {}
+}
+
+
+-To use the model in the component ts file, import it and then assign the class name as a type where needed to the corresponding property that will use that model
+as the type of data to store on it.
+-When storing data on that property, be sure to use the constructor for the model created for each piece of data.
+
+Ex:
+
+import { Recipe } from '../recipe.model';
+
+@Component({
+  selector: 'app-recipe-list',
+  templateUrl: './recipe-list.component.html',
+  styleUrls: ['./recipe-list.component.css']
+})
+export class RecipeListComponent implements OnInit {
+  recipes: Recipe[] = [];
+
+  constructor() { }
+  ngOnInit() {
+  }
+}
+

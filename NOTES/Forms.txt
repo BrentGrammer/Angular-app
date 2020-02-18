@@ -1,0 +1,1042 @@
+FORMS:
+
+-Angular ships with tools for building and woking with FORMS
+-Provides an object that makes it easy to retrieve values and work with the state of the form
+
+-Under the hood, an Angular form is a FormGroup (group of controls) 
+ Note: NgForm used in template forms is a wrapper around FormGroup)
+
+TWO APPROACHES:
+ -Template-Driven: Angular infers form object from the DOM and manages connecting controls, etc. - simple way and quick
+ -Reactive: More complex approach, you write the typescript and html code and manually connect them.  Good for having
+            greater control over the form, more custom styling etc.
+
+*NOTE: Angular forms are not sent to a url via an action attribute.  Angular will take over control and handle the form.
+
+-Think of the form element as a selector for a directive that is built in to Angular which will create the JavaScript
+ pbject representation of the form.  The object exposes data from the form that you can then access.
+
+ ----
+
+ Properties on NgForm object:
+   -NgForm is the javascript representation of the form created by Angular
+
+   -some properties on it are:
+     dirty: whether the form field value has changed from it's initial (i.e. empty) state 
+     touched: boolean if the form field(s) have been clicked into/focused
+     value: object of values for inputes based on name key
+     disabled: whether the form is disabled (i.e. the submit button)
+     controls: form inputs that are controlled with attributes on them such as valid etc.
+
+
+-----------
+
+TEMPLATE DRIVEN APPROACH:
+
+1) In app.module.ts, import the forms module from @angular/forms and add it to the imports array:
+   *With this module added, Angular will create a form representation in JavaScript when a form markup is used in 
+    the html
+    NOTE: Angular does NOT detect the inputs in the form automatically. (because some inputs on the form may not 
+    need to be included in the controls)
+
+  import { FormsModule } from '@angular/forms';
+
+  @NgModule({
+    ...
+    imports: [
+      BrowserModule,
+      FormsModule,
+    ]
+  })
+  export class AppModule { }
+
+2) In the form markup html, specify which inputs are controls by adding the ngModel directive and the name attribute:
+   -This tells angular to add this control to the JS object representation of the form created
+   
+   (note: ngModel can have 
+    ngModel     -> no binding: just tells Angular about a control to store on the JS object rep), 
+    [ngModel]   -> 1-way binding: can use this to give control a default value (the prop on the class sets the property in the html 
+                   control)
+    [(ngModel)] -> 2-way binding: can use this to get immediate access to the value of the control on each keystroke before submitting 
+                    form
+   
+   Ex:
+       <input
+          ...
+          ngModel
+          name="username"
+        />
+
+3) Set up form submission:
+   -Angular provides a listener for the event `ngSubmit` which will be fired whenever the form is submitted via normal
+    methods (i.e. through a button type=submit click) -- use this to prevent default submit behavior in browser 
+   -Set the ngSubmit listener on the form tag in the html markup to call an onSubmit() function (created) in your typescript class file for the component
+   -On the form tag add a reference and set it to NgForm which is the exposed JavaScript representation of the form with 
+    it's data.
+   -Pass in the reference to the onSubmit method
+
+   // in component.html:
+     <form (ngSubmit)="onSubmit(f)" #f="ngForm">
+
+   // in component.ts file:
+   import { NgForm } from '@angular/forms'
+
+   export class AppComponent {
+      ...
+
+      onSubmit(form: NgForm) {
+        console.log("Submitted");
+      }
+   }
+
+   **NOTE: Alternative approach to accessing the form: use @ViewChild and pass in the local ref to the form
+           *This is useful if you need access to the form not only when submitted, but before that as well.
+
+    Ex:
+    import { Component, ViewChild } from "@angular/core";
+    import { NgForm } from "@angular/forms";
+
+    ...
+    export class AppComponent {
+      // get local ref for the form element:
+      @ViewChild("f") signupForm: NgForm;
+      
+      onSubmit() {
+        // access the form via the view child prop
+        console.log(this.signupForm);
+      }
+    }
+
+   4) FORM VALIDATION:
+      -use directives on the input element in the html markup which correspond to HTML validation attributes 
+       (i.e. required, email, etc.)
+
+       Ex:
+            <input
+              ...
+              required
+              email
+            />
+
+      -The valid property on the NgForm object created by Angular will be false if validation on the input
+      fails
+      -This also will update the valid property on the input key in the controls property on the ngForm object
+      -If the form input value is invalid a class "ng-invalid" will be added to the html input (it is originally
+       automatically ng-valid.  Sidenote: also Angular dynamically adds ng-touched and ng-dirty as classes on the input)
+
+       -You can also add regular expressions (i.e. on a number input) by binding to the pattern property:
+
+        <input
+            type="number"
+            name="amount"
+            ngModel
+            required
+            pattern="^[1-9]+[0-9]*$"
+        />
+        // This prevents negative numbers from being entered and only whole positive numbers.
+
+Notes on Validation:
+Check out the Validators class: https://angular.io/api/forms/Validators - these are all built-in validators, though 
+that are the methods which actually get executed (and which you later can add when using the reactive approach).
+
+For the template-driven approach, you need the directives. You can find out their names, by searching for "validator" 
+in the official docs: https://angular.io/api?type=directive - everything marked with "D" is a directive and can 
+be added to your template.
+
+Additionally, you might also want to enable HTML5 validation (by default, Angular disables it). You can do so by adding 
+the ngNativeValidate  to a control in your template.
+
+    5) Style Form based on validation:
+       -Disable button if form is invalid: bind to the disabled prop on the submit button and set it to local ref of 
+        form (which is assigned to the ngForm object) and check the valid property:
+
+        <form (ngSubmit)="onSubmit(f)" #f>
+          <button type="submit" [disabled]="!f.valid">
+            Submit
+          </button>
+
+        -Style invalid inputs by using the Angular provided .ng-invalid and ng-touched class in your component's css:
+
+        Note: chain on the ng-touched class so that the red border is not showing on form load.  It will only showing
+              when both classes are on the input which happens after the user clicks in/out of the input
+        Ex:
+        input.ng-invalid.ng-touched {
+          border: 1px solid red;
+        }
+
+    6) Validation Error Messages:
+      -Add a local ref on the input to reference and set it to ngModel - this exposes controls on the form for checking
+      -add a span (maybe with a bootstrap "help-block" class) holding the error message and check the valid prop 
+       on the input ref created.  Also check touched to give user a chance to fill it in before displaying the error
+
+       Ex:
+             <input
+              ...
+              required
+              email
+              #emailRef="ngModel"
+            />
+            <span *ngIf="!emailRef.valid && emailRed.touched" class="help-block"
+              >Please enter a valid email!</span
+            >
+
+    7) Set default values on form controls:
+      -use prop binding on ngModel directive on the input and set it equal to either a string (wrap in single quotes inside the double)
+       or set it to a property on the typescript file class of the component. 
+      -This method creates one-way binding(as opposed to when ngModel does not have [] wrapped around it)
+
+      // ts file class:
+     
+      export class AppComponent {
+        ...
+        defaultSelectValue = "pet";
+        ...
+        }
+      }
+
+      // html component:
+      <select
+        ...
+        [ngModel]="defaultSelectValue"  // prop binding ngModel to prop in class sets the inputs default value
+      >
+
+    8) Accessing form data before submitting:
+
+    -An alternative way is to see above setting reference to a form and accessing it via @ViewChild
+
+    -Using 2 way binding:
+      - with just ngModel on the input, the form object is not updated until it is submitted by the user.
+      - You can use 2-way binding on ngModel on the input to get immediate access to the value as it is updated
+       (i.e. if you want to output it somewhere else on the form immediately)
+
+      -Set a default value in the ts class
+      -wrap ngModel in [()] to create 2-way binding on the input
+      -set it equal to the prop on the ts class
+
+      // html:
+       <input
+          ...
+          [(ngModel)]="answer"
+      />
+       <p>Your reply: {{ answer }}</p>  // enables immediate access to the current value
+
+      // ts file:
+      export class AppComponent {
+        ...
+        answer: string = "";
+        ...
+      }
+    }
+    
+   9) GROUP FORM CONTROLS:
+      -If you have a complex large form, you may want to group controls in the JS form object and validate groups of controls.
+
+      -add a ngModelGroup directive to a wrapper (i.e. div) around a group of controls (inputs) and set it equal to a string label.
+        This will create a key of that string name in the value property of the form object which holds an object of the grouped controls
+        
+        Also this will create an entry in the controls property with access to props such as valid, dirty, touched which are based on 
+        the group of controls (key matches the name set to ngModelGroup).
+          -ng-dirty, ng-touched, and ng-valid/invalid classes will be added to the wrapper of the controls where ngModelGroup is used.
+
+    
+      -You can set a local ref on the wrapper set to "ngModelGRoup" to get access to the form group (i.e. in your ts class).
+       -This can be used to output a validation error for example.
+
+       //html:
+       <div 
+         ngModelGroup="userData" 
+         #userData="ngModelGroup"
+       >
+          ...Inputs
+        </div>
+        <p *ngIf="!userData.valid && userData.touched">
+          User data is not valid.
+        </p>
+
+    10) Radio Buttons:
+
+      -set ngModel on the input type="radio"
+      -set a value with [value]="myValue"
+
+      Ex:
+        //html:
+        <div class="radio" *ngFor="let gender of genders">
+          <label>
+            <input type="radio" name="gender" ngModel [value]="gender" />
+            {{ gender }}
+          </label>
+        </div>
+
+        //ts:
+        export class AppComponent {
+          ...
+          genders = ["male", "female"]; // arrray of labels for each radio button
+          ....
+        }
+
+      11) SETTING AND PATCHING FORM VALUES BEFORE SUBMIT:
+
+      -Use the .patchValue on the form object exposed by the Angular JS form (from NgForm in the ts class)
+      -Pass a JS object targeting specific controls (the shape of the object should match up to the value object on the form)
+      -Useful for setting a part of the form.
+
+      -You can use .setValue() to set the value property of the form (useful for setting the entire form)
+       *You need to pass a JS object exactly matching the value prop of the form (the same keys set to values desired)
+
+         // method in ts file:
+         suggestUserName() {
+            const suggestedName = "Superuser";
+
+            // can use setvalue to set the whole form:
+            // this.signupForm.setValue({
+            //   userData: {
+            //     username: suggestedName,
+            //     email: ""
+            //   },
+            //   secret: "pet",
+            //   questionAnswer: "",
+            //   gender: "male"
+            // });
+
+            // overwrite or set parts of the form:
+            this.signupForm.form.patchValue({
+              userData: {
+                username: suggestedName
+              }
+            });
+          }
+
+          // A click listener would call this on a button in the form : i.e. (click)="suggestUserName()"
+
+              
+
+      12) Accessing Form Data (i.e. after submitting for displaying on the page):
+
+       -create an object representing form data as a property on the class
+       -in the onSubmit method, set properties to values from the form object created by Angular
+       -In the html set a if condition on submitted (prop on the class set when submitted form) to display the object created
+        set to the values on the submitted form object
+      
+      //ts file:
+      export class AppComponent {
+        @ViewChild("f", { static: true }) signupForm: NgForm;
+
+        user = {
+          username: "",
+          email: "",
+          secretQuestion: "",
+          questionAnswer: "",
+          gender: ""
+        };
+
+        submitted = false;
+
+        onSubmit() {
+          this.submitted = true;
+
+          const { value } = this.signupForm;
+
+          this.user.username = value.userData.username;
+          this.user.email = value.userData.email;
+          this.user.secretQuestion = value.secret;
+          this.user.questionAnswer = value.questionAnswer;
+          this.user.gender = value.gender;
+        }
+      }
+
+      // html:
+      <div class="row" *ngIf="submitted">
+        <div class="col-xs-12">
+          <h3>Your Data</h3>
+          <p>Username: {{ user.username }}</p>
+          <p>Email: {{ user.email }}</p>
+          <p>Secret Question: {{ user.secretQuestion }}</p>
+          <p>Answer: {{ user.questionAnswer }}</p>
+          <p>Gender: {{ user.gender }}</p>
+        </div>
+      </div>
+
+      13) RESETTING A FORM:
+
+        -After submitting for example, you can call reset() on the form object (NgForm instance) 
+        - You can optionally pass in a form object which will reset the form to specific values
+        - reset() also resets the valid, touched, dirty properties etc. to defaults.
+
+            // Example onSubmit method in typescript class:
+            onSubmit() {
+              ...
+              this.signupForm.reset();
+            }
+
+
+====================
+
+REACTIVE FORMS:
+
+-Programmatically generate the form in TypeScript code and synchronizes with the DOM
+
+-Unlike the template driven approach, you create the form object in your ts file class and so reference and use it there
+
+1) Setup:
+
+  -In app.module.ts import the ReactiveFormsModule  and add it to the imports list:
+
+    //app.module.ts:
+        ...
+        import { ReactiveFormsModule } from "@angular/forms";
+
+        @NgModule({
+          ...
+          imports: [BrowserModule, ReactiveFormsModule],
+          ...
+        })
+        export class AppModule {}
+
+  -In TypeScript class file, import FormGroup from @angular/forms and assign it to a property
+
+  Ex:
+        ...
+        import { FormGroup } from "@angular/forms";
+
+        @Component({
+          ...
+        })
+        export class AppComponent {
+          ...
+          signupForm: FormGroup;
+        }
+
+2) Initialize the Form in the typescript class file:
+
+  -Initialize the form in a lifecycle hook before the template is rendered(i.e. ngOnInit)
+  -Assign the created property to hold the form to an instance of FormGroup
+  -Pass in an object to the FormGroup constructor with key value pairs representing the controls of the form.
+    *NOTE: Make sure to wrap the keys in quotes so that to make sure it is not mangled when the code is minified since it is referenced in 
+           the HTML by name.
+  -As the value to the control key in the config obj passed into FormControl constructor, pass in  args (1 required, 2 optional) -
+     (Initial value/state of the control, single value or array of validators, asynchronous validators)
+       pass in null to have an empty field as first param.
+
+       Ex in ts file:
+          ....
+          import { FormGroup, FormControl } from "@angular/forms";
+
+          @Component({
+            ...
+          })
+          export class AppComponent implements OnInit {
+            signupForm: FormGroup;
+
+            ngOnInit() {
+              // It's a good idea to wrap keys in quotes to prevent mangling during minification since html references them by name
+              this.signupForm = new FormGroup({
+                'username': new FormControl(null),
+                'email': new FormControl(null),
+                'gender': new FormControl("male") // default select value
+              });
+            }
+          }
+
+    3) Connect Form to HTML Template:
+
+      - add the [formGroup] directive to the <form> tag to tell Angular to use the FormGroup you are creating in the ts class and bind to it
+        Pass your property holding the FormGroup in the ts class to the directive by setting it equal to it. [formGroup]="mySignupForm"
+
+      - Tell Angular which inputs are connected to controls in the ts file FormGroup object with the `formControlName` directive
+        placed on the input. pass the name of the control from the key on the FormGroup object in the ts code.
+        (You don't need to bind with [] around the directive since your only passing the property name as a string)
+
+      Ex HTML:
+
+        <form [formGroup]="signupForm">   // --> matches signupForm: FormGroup prop in ts file
+          ...
+          <input
+            type="text"
+            id="username"
+            class="form-control"
+            formControlName="username"
+          />
+
+
+      4) Submitting and getting access to form data:
+        -You have access to the form object since it is created and assigned in the ts file
+        
+        Ex:
+        export class AppComponent implements OnInit {
+          signupForm: FormGroup;
+
+          ngOnInit() {
+            this.signupForm = new FormGroup({
+              ...keys values for controls
+            });
+          }
+
+          onSubmit() {
+            console.log(this.signupForm);
+          }
+        }
+
+      5) VALIDATION:
+        -You don't add validation directives in the html template to inputs like in the template driven approach
+        -Configure validation in the ts file as the second arg to the FormControl constructors using the Validators object
+         NOTE: Do not execute (call) the method on Validators, just pass the reference - Angular will execute it on form control change
+
+         Example in ts file:
+
+           ngOnInit() {
+              this.signupForm = new FormGroup({
+              username: new FormControl(null, Validators.required),
+              email: new FormControl(null, [Validators.required, Validators.email])
+            });
+          }
+
+      6) Displaying Validation errors:
+         -In the HTML you can set a ngIf directive on a text element and reference the form by the prop name from the ts class.
+          use the .get() method on the form reference and pass in the control name or the path to the controlname (if you have nested
+          controls) to get access to the form control for checking it's valid and touched properties.
+
+          Ex:
+           <span
+              *ngIf="
+                !signupForm.get('username').valid &&
+                signupForm.get('username').touched
+              "
+              >Username is invalid</span
+            >
+
+          NOTE: To display validation message for entire form just check signupForm.valid and signupForm.touched
+
+      7) Nested Formgroups:
+
+        -You can have multiple levels in your FormGroup controls object (i.e. if you have grouped controls)
+         (i.e. you can have a FormGroup inside a FormGroup:
+            new FormGroup({
+              'userData': new FormGroup({ ... })
+            })
+         )
+
+         -In the Html template wrap the inputs in a div and place the formGroupName directive on it
+
+         -To reference the form controls in the HTML (i.e. to display validation messages conditionally) pass in the path to the get
+           method (i.e.          
+                      <span
+                        *ngIf="
+                          !signupForm.get('userData.username').valid &&
+                          signupForm.get('userData.username').touched
+                        "
+                        >Username is invalid</span
+                      >
+                  )
+
+          // HTML template:
+          <div formGroupName="userData">
+              <label for="username">Username</label>
+              <input
+                ...
+                formControlName="username"
+              />
+              <span
+                *ngIf="
+                  !signupForm.get('userData.username').valid &&
+                  signupForm.get('userData.username').touched
+                "
+                >Username is invalid</span
+              >
+              <label for="email">email</label>
+              <input
+                ...
+                formControlName="email"
+              />
+              <span
+                *ngIf="
+                  !signupForm.get('userData.email').valid &&
+                  signupForm.get('userData.email').touched
+                "
+                >Email is invalid</span
+              >
+          </div>
+
+          // TS File:
+          export class AppComponent implements OnInit {
+            signupForm: FormGroup;
+
+            ngOnInit() {
+              this.signupForm = new FormGroup({
+                userData: new FormGroup({
+                  username: new FormControl(null, Validators.required),
+                  email: new FormControl(null, [Validators.required, Validators.email])
+                }),
+                gender: new FormControl("male") // default select value
+              });
+            }
+          }
+
+        8) Using FormArray:
+          -can be useful for generating form fields dynamically.
+
+          -In the ts file add a control that is set to the FormArray constructor.  Pass in an array of controls or an empty array
+           which you can push to later on a click handler.
+
+          // ts file:
+
+          export class AppComponent implements OnInit {
+            signupForm: FormGroup;
+
+            ngOnInit() {
+              this.signupForm = new FormGroup({
+                ...
+                hobbies: new FormArray([])
+              });
+            }
+
+            // click handler for adding a form field
+            onAddHobby() {
+              // default value is null/empty
+              const control = new FormControl(null, Validators.required);
+              // You need to cast the returned value as a FormArray as shown below:
+              (<FormArray>this.signupForm.get("hobbies")).push(control);
+            }
+          }
+
+          -In the HTML template, wrap a div around the area where you want the array of form controls to render and set the directive
+           formArrayName to the form Array control name set in the ts file.
+
+          -In the HTML template, as of Angjular 8 you need to outsource the getting of the form array to a method inside the ts class.
+
+          -Then you need to add the formControlName directive to the input element in the template and set it to the index (extracted
+           from the *ngFor loop) to bind it to the form object.
+
+           // ts file:
+
+           ngOnInit() {
+            this.signupForm = new FormGroup({
+              ...
+              hobbies: new FormArray([])
+            });
+           }
+
+            // click handler to add control to form
+            onAddHobby() {
+              const control = new FormControl(null, Validators.required);
+              // You need to cast the returned value as a FormArray as shown below:
+              (<FormArray>this.signupForm.get("hobbies")).push(control);
+            }
+
+            getHobbyControls() {
+              // This is necessary for Angular 8 - you can't use signupForm.get in the template to get the Form Array
+              return (this.signupForm.get("hobbies") as FormArray).controls;
+            }
+          }
+
+
+          // HTML template:
+          <form [formGroup]="signupForm">
+            ...
+            <div formArrayName="hobbies">
+              <h4>Your Hobbies</h4>
+              <button class="btn btn-default" type="button" (click)="onAddHobby()">
+                Add Hobby
+              </button>
+              <div
+                class="form-group"
+                *ngFor="let hobby of getHobbyControls(); let i = index"
+              >
+                <input type="text" class="form-control" [formControlName]="i" />
+              </div>
+           </div>
+            ...
+        </form>
+
+        // The values will now be stored in an array on the 'hobbies' key of the value object of the Angular form.
+
+        CLEARING A FORM ARRAY:
+        In Angular 8 a new way to clear all items in the form array is:
+           (<FormArray>this.recipeForm.get('ingredients')).clear();
+
+
+      9) ADDING CUSTOM VALIDATORS:
+
+        -A validator in Angular is a function that checks the validity of a control and runs whenever the value is changed
+        -A validator function can be defined on your ts class (you can give the method any name) and takes a control: FormControl
+         passed in and returns an object with the shape: { [key: string]: boolean }
+          The key is a label for the validation error code (make it up) and is set to true - this means the control is not valid.
+         **If validation is successful and passes, return null, and not false, etc. (you can also return nothing) - this means the
+           form control is valid.
+
+        -finally in the second argument to the form control in the ts file, pass in a reference to the method created for the custom 
+         validator. (you can tack it into an array if using other validators as well on the control)
+        ***NOTE: You need to bind this to the reference since the context changes when Angular calls it
+
+        *If you have a lot of custom validaotors, you can make a class file (i.e. custom-validators.ts) and create static methods on it
+        for the validators.  Then import the class and use the references to the methods off of it.
+
+
+        // ts file:
+        export class AppComponent implements OnInit {
+          ...
+          ngOnInit() {
+            this.signupForm = new FormGroup({
+                userData: new FormGroup({
+                  username: new FormControl(null, [
+                    Validators.required,
+                    this.forbiddenNames.bind(this)
+                  ])
+                }),  
+              });
+            }
+
+            forbiddenNames(control: FormControl): { [key: string]: boolean } {
+              // checks if value of control is included on the forbidden names array
+              // Note: -1 returns true, so you need to check that indexOf result is not equal to -1
+              if (this.forbiddenUsernames.indexOf(control.value) !== -1) {
+                return { nameIsForbidden: true };
+              }
+              return null;
+            }
+          }
+
+          -The error will be on the form object -> controls -> control key -> errors object.
+           (i.e. { nameIsForbidden: true })
+           -You can also check for other built in error codes to display relevant validation messages which depend on
+            the error code which is set to true on the errors object on the control.
+           - basically, just check the errors object on the control for the error code by name and display a corresponding 
+             validation message if it exists and is truthy.
+
+            // HTML template:
+              <label for="username">Username</label>
+              <input
+                ...
+                formControlName="username"
+              />
+              <span
+                class="help-block"
+                *ngIf="
+                  !signupForm.get('userData.username').valid &&
+                  signupForm.get('userData.username').touched
+                "
+              >
+                <span
+                  *ngIf="signupForm.get('userData.username').errors['nameIsForbidden']"
+                >
+                  This username is forbidden.
+                </span>
+                <span 
+                  *ngIf="signupForm.get('userData.username').errors['required']"
+                >
+                  This username is Required.
+                </span>
+              </span>
+
+        10) Asynchronous Validators:
+
+          -Create a method in the ts class for a validator that returns a promise or observable.
+          -If validation condition fails, resolve with an object containing the validation key set to true, otherwise resolve with null
+          -pass the reference to the validator method as the third argument to the FormControl constructor.
+
+        // ts file:
+          export class AppComponent implements OnInit {
+            signupForm: FormGroup;
+
+            ngOnInit() {
+              this.signupForm = new FormGroup({
+                  ....
+                  email: new FormControl(
+                    null,
+                    [Validators.required, Validators.email],
+                    this.forbiddenEmails
+                  )
+                })
+              });
+            }
+
+            ...
+      
+            // Async Validator:
+            forbiddenEmails(control: FormControl): Promise<any> | Observable<any> {
+              const promise = new Promise<any>((resolve, reject) => {
+                setTimeout(() => {
+                  if (control.value === "test@test.com") {
+                    resolve({ emailisForbidden: true });
+                  } else {
+                    resolve(null);
+                  }
+                }, 1500);
+              });
+              return promise;
+            }
+          }
+
+        11) Subscribing and Listening to Value and Status Changes on the Form:
+
+          -three are two observables you can subscribe to on the form or on any form control (i.e. with .get()):
+            valueChanges - updates whenever a form control value changes - returns the form value object
+              *You can subscribe to this on the entire form or a specific control
+            statusChanges - updates whenever the form status changes (i.e. returns 'VALID', 'INVALID', 'PENDING', etc.)
+
+            Ex:
+
+            //ts file:
+            export class AppComponent implements OnInit {
+
+              ngOnInit() {
+                this.signupForm = new FormGroup({
+                  ...
+                });
+
+                // can subscribe to two observables on the form (or form control with .get()) to listen to value or status changes
+                this.signupForm.valueChanges.subscribe(value => {
+                  console.log(value); // logs value object
+                });
+
+                this.signupForm.statusChanges.subscribe(status => {
+                  console.log(status); // logs 'VALID', 'INVALID', etc
+                });
+              }
+
+          12) Pre-poluate the Form with Values:
+
+            -i.e. can be useful if the user goes to a edit/update form
+            -call .setValue() on the form and pass in an object matching the value object shape with values set.
+            -To set one value or not the whole value object, use .patchValue()
+
+              // ts file
+              ngOnInit() {
+                this.signupForm = new FormGroup({
+                  ...
+                });
+
+                ...
+
+                this.signupForm.setValue({
+                  userData: {
+                    username: "username",
+                    email: "myemail@email.com"
+                  },
+                  gender: "male",
+                  hobbies: []
+                });
+
+                // set value on individual control:
+                this.signupForm.patchValue({
+                  userData: {
+                    username: "username4"
+                  }
+                });
+              }
+
+          13) Reset form:
+            use <FormGroup>.reset()
+
+            ex: this.signupForm.reset() in the onSubmit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=============================================
+
+-------------------
+
+COMMON PATTERNS:
+
+DISABLE BUTTON IF INPUT EMPTY:
+
+-Use property binding:
+<button [disabled]="username === ''">
+
+CLEAR AN INPUT:
+
+-use event binding and inline expression to set prop in component class to empty string
+-Note the prop is set with two way binding beforehand
+<button (click)="username = ''">
+
+ONE WAY BINDING:
+
+-2 way binding (using [(ngModel)])="propName" is not necessary when only using form input data on click of a button.
+
+-Use local reference to an element (i.e. an input element) and pass it into the click handler 
+Ex:
+    <input type="text" class="form-control" #serverNameInput />
+    <button (click)="onAddServer(serverNameInput) />
+
+- In the ts file, set values for the event emitted to be the value of the passed in input ref.
+(see cockpit ts file from server angular proj)
+
+  onAddServer(nameInput: HTMLInputElement) {
+    this.serverCreated.emit({
+      serverName: nameInput.value,
+      serverContent: this.newServerContent
+    });
+  }
+
+@VIEWCHILD:
+
+-Access local references in the ts file of the component directly with @ViewChild('local ref label') decorator on 
+the property name.
+Note: In Angular 8, if using the ref in ngOnInit() then you need to add { static: true } as a second arg.  Otherwise
+      you need to do { static: false }
+
+- The type returned by @ViewChild() is ElementRef, which is an Angular type.  You need to import it from 'angular/core'
+  and access the nativeElement prop on it to access the underlying HTML element.
+
+NOTE: It is bad practice to manipulate the DOM / elements passed in to the ts file. This should be done in the html 
+      template with the tools provided ({{ }}, directives, projection etc.)
+
+      Ex:
+
+      import { ..., ViewChild, ElementRef } from '@angular/core';
+
+      ...
+
+      export class CockpitComponent implements OnInit {
+        ...
+
+        @ViewChild("serverContentInput", { static: true })
+        serverContentInput: ElementRef;
+        constructor() {}
+
+        ngOnInit() {}
+
+        onAddServer(nameInput: HTMLInputElement) {
+          this.serverCreated.emit({
+            serverName: nameInput.value,
+            serverContent: this.serverContentInput.nativeElement.value
+          });
+        }
+      }
+
+  ---------------
+
+    @CONTENTCHILD:
+
+  (see projecting content with ng-content below)
+  -You can access element refs of content coming from another component that is passed into ng-content tags of a child 
+  by using @ContentChild('refLabel') decorator on a property in the child ts file(of the component that is having content 
+  passed in).
+
+  NOTE: You cannot access the value of the property until ngAfterContentInit lifecycle event has occured.
+
+  // In parent component html:
+      <app-server-element
+        *ngFor="let serverElement of serverElements"
+        [srvElement]="serverElement"
+      >
+      <p #contentParagraph>
+        This is projected into the child component
+      </p>
+    </app-server-element>
+
+  Ex in child component ts file:
+    // get local ref of an element in the content passed into this component:
+    @ContentChild("contentParagraph", { static: true }) paragraph: ElementRef;
+
+    ngOnInit() {
+      // text content is empty here
+      console.log("paragraph content", this.paragraph.nativeElement.textContent);
+    }
+
+  ngAfterContentInit() {
+    // text content will now have a value
+    console.log("paragraph content", this.paragraph.nativeElement.textContent);
+  }
+
+  -------------------------
+
+  PROJECTING DATA WITH NG-CONTENT:
+
+  - If you want to pass in html content into a component from outside (i.e. in between opening and closing tags of a
+    child component) - by default Angular removes anything between the opening and closing tags of a child component from
+    the DOM.
+
+  - Use ng-content directive to tell Angular to render whatever is passed into the component tags inside the 
+    parent component.  Acts as a hook to place where Angular should add any content passed into the component 
+    from the parent.
+
+    Ex: 
+
+    // parent passing in content to child app-server-element:
+    <div class="container">
+      <app-cockpit
+        (serverCreated)="onServerAdded($event)"
+        (bpCreated)="onBluePrintAdded($event)"
+      ></app-cockpit>
+      <hr />
+      <div class="row">
+        <div class="col-xs-12"></div>
+        <app-server-element
+          *ngFor="let serverElement of serverElements"
+          [srvElement]="serverElement"
+        >
+          <p>
+            <strong *ngIf="serverElement.type === 'server'" style="color: red">{{
+              element.content
+            }}</strong>
+            <em *ngIf="serverElement.type === 'blueprint'">{{ element.content }}</em>
+          </p>
+        </app-server-element>
+      </div>
+    </div>
+
+    // child app-server-element with ng-content directive to render passed in content:
+    <div class="panel panel-default">
+      <div class="panel-heading">{{ element.name }}</div>
+      <div class="panel-body">
+        <ng-content></ng-content>
+      </div>
+    </div>
+
+    ---
+
+    Using Subjects (i.e. for an edit form):
+
+    -Service has a Subject which can emit an index value or id of an item to edit
+    -when edit button is clicked, a component can inject the service and use the Subject in the click handler to emit the \
+     id/index of the item (via a next() call), so you can listen to it in another place (the purpose is to emit which item 
+     is being edited to bring up an appropriately associated form)
+    -In the edit form component, you can listen for the emitted Subject value ngOnInit() by subscribing to the Subject from the
+     injected service. Make sure to store and unsubscribe from the subscription in ngOnDestory()
+    -In the subscription handler in the edit form ts file, store the item index (on a field created in the class), change editMode
+     field to true, and store the item being edited in a field by accessing a getter on an injected service holding an index of the
+     items.
+    -Update the edit form with the item data: get access to the form reference via @ViewChild and in the subscription callback, 
+     use .setValue() on the form field created from the reference and pass in the object with the input names and values from the 
+     stored item being edited form.
+    -In service, add an update<Item>() method that takes in an index or id of item to edit
+    
+
+    ===================
+
+
+    GOTCHAS:
+
+    - If you have a button in the form that has a click listener and you don't want to submit the form , make sure to give it
+      type="button"
+      ***Make sure all buttons in the form element that do not submit the form have a type="button" on them to prevent form submission
+
+    - If storing data in a service (i.e. a list of items to display), and you add an item for example, and the form component
+      is a child of the parent that has the service in it's providers, after you navigate away outside of that heirarchy, the 
+      service will be destroyed and the updated list of items lost.  
+      ** You need to put the service in the app.module.ts to avoid instances being destroyed unexpectadly when the parent
+         component providing the service is destroyed.
+
+  - Make sure to use either loose comparison or truthiness check in ngOnInit or when checking url params from the router.  Using strict 
+    equality will cause the form to break and for FormGroup name for the form not to be found for some reason. 
+    Ex:
+      // in ngOnInit in form component typescript class:
+       this.route.params.subscribe((params: Params) => {
+         this.editMode = params["id"] ? true : false; // do not use params['id'] !== null (strict equality)
+       });
+
+
+      
+  

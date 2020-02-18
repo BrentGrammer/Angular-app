@@ -1,0 +1,193 @@
+PIPES:
+
+-Feature built into Angular 2+ which allows you to transform output in your html template
+
+*Usefuly when you ONLY want to transform the way data is displayed in the template and not alter the actual property in the 
+ typescript class.
+
+ -There are built in pipes and you can make your own pipes too
+
+---
+
+ BUILTIN PIPES:
+
+ docs: https://angular.io/api?query=pipe
+
+ -uppercase
+ -date
+ -async
+
+ Example of builtin pipe:
+
+ // in html template: use the | symbol followed by the builtin pipe name (this transforms the output to all uppercase chars):
+ {{ myValue | uppercase }}
+
+ -PASSING PARAMS TO PIPES TO CONFIGURE THEM:
+
+   - use a colon `:` after the pipe name
+   - for multiple params, simply separate the values by a `:`
+
+   Ex:
+        {{ server.started | date: "fullDate" }}
+
+---
+
+CHAINING PIPES:
+
+ - You can chain pipes after each other with addition `|` symbols
+ - Be careful about the order of the pipes - they are parsed/executed LEFT to RIGHT
+
+ Example chaining date pipe with uppercase pipe:
+   {{ server.started | date: "fullDate" | uppercase }}
+
+   Note: putting uppercase before the date pipe will result in an error since the date is a Date and not a string at that point
+
+---
+
+CREATING CUSTOM PIPES:
+
+-To generate a pipe with the command line:
+  `$ ng g p <nameofpipe>`
+
+-Create a file named as <pipename>.pipe.ts
+-implement the PipeTransform interface from '@angular/core' in your typescript class in the pipe file created
+-Provide the transform() method in the class which takes the value to be transformed as a parameter and a list of optional params
+-Add a @Pipe decorator to the pipe typescript class where you can specify the name to be used to call it in the html template
+
+-If you want to take parameters, add additional optional parameters to the params in the typescript class
+
+-Go to the app/module.ts file and add the pipe class created to the declarations list (like components and directives):
+  // In app.module.ts:
+  ...
+  import { ShortenPipe } from './shorten.pipe';
+
+  @NgModule({
+    declarations: [
+      ...
+      ShortenPipe
+    ],
+  ...
+
+  Ex typescript class custom pipe:
+
+    import { PipeTransform, Pipe } from "@angular/core";
+
+    @Pipe({
+      name: "shorten"
+    })
+    export class ShortenPipe implements PipeTransform {
+      // second param is an optional parameter you can pass in 
+      transform(value: any, limit: number) {
+        if (value.length > limit) {
+          return value.substr(0, limit) + " ...";
+        }
+        return value;
+      }
+    }
+
+    // in html:
+    {{ server.name | shorten:10 }}
+
+----
+
+CREATING A CUSTOM FILTER PIPE:
+
+Gotcha: if in filter mode (with input entered in the filter input) and adding or changing elements displayed in the list, Angular will
+        NOT update the list automatically - this is good as it prevents potential performance issues since the pipe would need to be 
+        run every time data on the page changes.  
+        You can force the update, but you need to be aware of potential performance issues doing this if the list is very long.
+        set a second parameter in the @Pipe decorator in the pipe class: { ..., pure: false }
+
+
+        // component ts class:
+          ...
+          export class AppComponent {
+            servers = [
+              ...
+            ];
+
+            // set by the filter input - this is used by the filter pipe
+            filteredStatus: string = "";
+
+            ...
+
+            onAddServer() {
+              ...
+            }
+          }
+
+        // Filter Pipe ts class:
+          import { Pipe, PipeTransform } from "@angular/core";
+
+          @Pipe({
+            name: "filter",
+            // This enables the list to be updated when a server is added even when in filter mode (filter input has a value inputted)
+            // Use this with caution since it has potential performance issues:
+            pure: false
+          })
+          export class FilterPipe implements PipeTransform {
+            transform(value: any, filterString: string, propName: string): any {
+              // check if there is no input and return the entire list
+              if (value.length === 0 || filterString === "") {
+                // return the empty string if nothing in the fitler input on html
+                return value;
+              }
+
+              const resultArray = [];
+
+              // item would be a server in the servers array from app component
+              for (const item of value) {
+                if (item[propName] === filterString) {
+                  resultArray.push(item);
+                }
+              }
+              return resultArray;
+            }
+          }
+
+          // html template with filter input and pipe on the ngFor loop:
+              <input type="text" [(ngModel)]="filteredStatus" />
+              <button class="btn btn-primary" (click)="onAddServer()">
+                Add Server
+              </button>
+              <ul class="list-group">
+                <li
+                  class="list-group-item"
+                  *ngFor="let server of servers | filter: filteredStatus:'status'"
+                  [ngClass]="getStatusClasses(server)"
+                >
+                  <span class="badge">
+                    {{ server.status }}
+                  </span>
+                  <strong>{{ server.name | shorten }}</strong> |
+                  {{ server.instanceType | uppercase }} |
+                  {{ server.started | date: "fullDate" | uppercase }}
+                </li>
+            </ul>
+
+----
+
+### ASYNC PIPES:
+
+- Use the built-in `async` pipe on the output data (which would be a promise) in the html template:
+
+- When used with Observables, the pipe would subscribe to them automatically
+
+- Example in html:
+      ```
+      <h3>App Status:</h3>
+      {{ appStatus | async }}
+      ```
+- In TS component class:
+  ```javascript
+  export class AppComponent {
+    // simulated async call to api for testing async filters:
+    appStatus = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve("stable");
+      }, 2000);
+    });
+  ```
+
+
+

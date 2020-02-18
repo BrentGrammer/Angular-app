@@ -1,0 +1,325 @@
+DATA BINDING IN ANGULAR:
+
+-communication between typescript code and html
+
+4 ways:
+
+-String Interpolation {{ data }}  // output data to user
+-Property Binding [property] = "data" //bind to an attribute property on an element to manipulate it in the ts file
+-Event Binding (event) = "expression" // react to events by user
+-Two way data binding // react to event and output data
+
+Communicating from child to parent, i.e. emitting custom events - @Output() decorator
+Communicating from parent to child, i.e. accessing props on a child component - @Input() decorator
+-------------------
+
+STRING INTERPOLATION:
+
+-You can use {{ }} syntax which holds any expression that can be resolved to a string (or returns a value that is coerced
+to a string by JavaScript, like a number, etc.)
+-You cannot use multiline or block expressions in this syntax (no if or for loops, but you can use a ternary)
+
+-In the typescript file for the component, you can define variables with values in the class:
+
+class MyComponent {
+  x = 10;
+  y = 'string';
+
+  myString() {
+    this.y
+  }
+}
+
+-Now in the html template file:
+
+<p>My number is {{ x }} and my string is {{ y }}</p>
+<p>My String is {{ myString() }}
+
+------------------
+
+PROPERTY BINDING:
+
+-Bind the code in the class in the ts file to an attribute property on an html element in the template to manipulate 
+it dynamically
+-Select a property with [] and set it to a typescript expression inside quotes (you have access to variables and data
+defined in the class block in the ts file for ex. there)
+
+***NOTE: If you are just passing a string in a bound prop, you can remove the square brackets and just have one set
+of quotes:
+
+Ex:
+  `<p [myprop]="'string'">`
+
+  becomes
+
+  `<p myprop="string">`
+  // works the same without sq brackets
+
+Syntax:
+
+<element [property]="any_typescript_expression">
+
+Ex:
+// in html template for component:
+
+<button class="btn btn-primary" [disabled]="!allowNewServer">Add Server</button>
+// sets disabled to the opposite of the referenced variable set in the class in the ts file
+
+In the class (ts file):
+
+@Component({
+  selector: 'app-servers',
+  templateUrl: './servers.component.html',
+  styleUrls: ['./servers.component.css']
+})
+export class ServersComponent implements OnInit {
+  allowNewServer = false;
+}
+
+-You can set DOM properties that you can manipulate with JavaScript as well:
+
+<p [innerText]="allowNewServer"></p>
+// will output false setting the p.innerText to the variable referenced in the class in the ts file.
+
+--
+
+EXPOSE PROPERTIES TO OUTSIDE COMPONENTS SO THEY CAN ACCESS AND ASSIGN THEM:
+
+-Expose prop on child component with @Input decorator in the child comp's class file.
+-Pass data down to a component from a parent by accessing the exposed(w/@Input) prop on/through the child's selector
+-You can then assign values to that exposed property on the child from the parent html template
+
+*** All properties for a component are only accessible inside that component's html template file and not outside by
+default.
+
+To access the property of one component from another component, you need to expose the property in the ts file with a 
+@Input decorator:
+
+@Input('optional alias') property: type;
+
+Ex:
+// import Input:
+import { Component, OnInit, Input } from "@angular/core";
+
+@Component({...})
+
+// call the Input decorator in front of the prop to expose:
+export class ServerElementComponent implements OnInit {
+  @Input() element: { type: string; name: string; content: string };
+
+// Now any component (i.e. parent) implementing the component through it's selector can bind to properties:
+
+Ex in parent html template - server-element is a child with the exposed element prop:
+
+  <div class="row">
+    <div class="col-xs-12"></div>
+    <app-server-element
+      *ngFor="let serverElement of elements"
+      [element]="serverElement">
+      // This is assigning the item in parent elements to the child's exposed element property
+
+CHANGE NAME OF PROP LABEL TO USE OUTSIDE OF COMPONENT:
+  // arg is what you can name the exposed prop outside the component
+  @Input("srvElement") element: { type: string; name: string; content: string };
+
+  Now you can access the prop as [srvElement]="serverElement" in the parent to assign it
+
+-------------
+
+EVENT BINDING:
+
+-You can bind to all events available to the html element
+-On the element set the event name in parentheses and set it equal to a typescript expression
+Note: unlike React, the expression in quotes is not a reference but a snippet to execute when the event occurs - 
+so you do call the function in the expression since it will only execute the expression at event time
+
+Syntax: <element
+          (eventName)="code to execute when event occurs - typescript expression"
+        >
+
+Ex:
+
+<button 
+  class="btn btn-primary" 
+  [disabled]="!allowNewServer"
+  (click)="onCreateServer()"
+>
+  Add Server
+</button>
+
+Passing Data from an Event:
+
+-There is a reserved variable $event that you can pass to the event handler used in the event binding on the element
+-You can then set a property in the component class which you can update with data from the event passed to the handler
+
+Ex:
+  // in class:
+  serverName = '';
+  ...
+  onUpdateServerName(event: Event) {
+    console.log(event);
+    // casting target to an input type since value is only available on that type (done for typescript)
+    this.serverName = (<HTMLInputElement>event.target).value;
+  }
+
+  // in html template file, pass $event reserved var to handler:
+  <input 
+    type="text"
+    class="form-control"
+    (input)="onUpdateServerName($event)"
+  />
+  <p>{{ serverName }}</p>
+
+-------------------
+
+TWO-WAY BINDING:
+
+note: For Two-Way-Binding to work, you need to enable the ngModel  directive. This is done by adding the 
+FormsModule  to the imports[]  array in the AppModule.
+You then also need to add the import from @angular/forms  in the app.module.ts file:
+import { FormsModule } from '@angular/forms'; 
+
+-Combine the syntax for property and event binding and use an Angular Directive called ngModel (see above note)
+and set it to a value(referencing a property) in the component class.
+-This will cause the event to update that referenced property in the component automatically with the value of the 
+event
+-If the property referenced is changed elsewhere, then it will also update the value on the element (i.e. an input el)
+
+Syntax: [(ngModel)]="propertyName"
+
+Ex:
+
+<input 
+  type="text"
+  class="form-control"
+  [(ngModel)]="serverName"
+/>
+
+// The serverName variable property in the component class will be updated with event values when events occur, and also
+if the property value is changed anywhere else it will update the value on the input el.
+
+========================
+
+CUSTOM PROPERTY BINDING IN COMPONENTS:
+
+
+PASS DATA DOWN TO ANOTHER COMPONENT -- EXPOSING PROPERTIES TO BE ACCESSIBLE OUTSIDE OF A CLASS COMPONENT:
+
+-Used to pass data from a component down to another component being implemented via it's selector.
+
+**All properties of components by default are only accessible inside these components and not from
+the outside (i.e. you can only access them in the typescript file for the component with this.<propertyName>)
+
+*You need to be explicit about which properties should be exposed to outside parent components  etc. (i.e. in an ngFor
+Directive that loops over instances of a child component)
+-Import Input from angular and Use a decorator @Input in front of a property in the class definition to declare a property as being accessible 
+outside the component:
+
+import { ..., Input } from '@angular/core';
+
+export class MyComponent implements OnInit {
+  @Input() element: { type: string, name: string, content: string }
+}
+
+// Now any component implementing this component via it's selector is able to bind to the properties defined in it:
+
+Ex: A Parent Component:
+
+<div>
+  <app-my-component *ngFor="let el of elements"
+    [element]="el"
+</div>
+
+--
+
+Assinging an ALIAS:
+
+-Can be used to change the name used in property binding
+-You can pass an alternative property name to use which will reference a property with the @Input decorator into the decorator
+Ex in the class definition:
+
+@Input('myalias') element: { type: string, name: string, content: string }
+
+// Now in the parent component you must reference the property you are binding to by it's alias:
+
+<div>
+  <app-my-component *ngFor="let el of elements"
+    [myalias]="el"
+</div>
+
+-----
+
+PASSING DATA FROM A LOWER (CHILD) COMPONENT TO THE PARENT COMPONENT IMPLEMENTING IT:
+
+EMITTING CUSTOM EVENTS:
+
+-You will need to create a custom event (on the nested child component in it's class definition) which you bind on the 
+implemented lower level component to a handler in the top level component class definition (ts file).  Pass in an 
+$event parameter to the handler which will contain any needed data from the event.
+
+-The custom event binded to is defined in the nested component and placed on the nested component, and the handler 
+is defined in the top level component and is called with data emitted from the custom event passed in.
+
+NOTE: Custom Events do not propogate up through the component tree.
+
+
+<div>
+  <app-component 
+    (customEventEmittedFromApp-component)="myEventHandlerInTopLevelComponentTSClss($event)">
+  </app-component>
+</div>
+
+-In the class definition of the top level component's handler define the type of data you are expecting to be 
+passed into the handler called by the custom event on the implemented child component:
+
+TOP LEVEL COMP:
+
+class ... {
+  propToReferenceInHtml = []; // this will eventually hold data passed in custom event from nested component handled below
+
+  customEventHandler(data: { key1: string, key2: string, etc. }) {
+    propBeingUsedInHtml.push(data); 
+    etc...
+  }
+}
+
+-Now you need to emit the custom event from the nested component class defintion:
+
+  1) create properties in the class ts def file with the name of the custom event(s)
+  -Add @Output decorators to the properties to tell Angular they are able to be sent out of the component and accessible 
+   to outer components which can catch the custom events (make sure to import Output from angular/core)
+  -import EventEmitter from '@angular/core'
+  -Assign a value of new EventEmitter() to the custom event properties
+  -Then in your method that fires in the nested component that also involves a need to send data to the top level
+   component, call the emit() method on the property to emit it as a custom event and pass in the data to send with it.
+
+
+NESTED COMP BEING USED IN TOP LEVEL COMP AND PASSING DATA TO IT IN CUSTOM EVENT:
+
+import { EventEmitter, Output, ... } from '@angular/core';
+
+class ... {
+  // event emitter is a generic type (assign with <> in typescript and define the data type you expect to emit)
+  // data type expected to be emitted would match what the handler in the top level component expects
+  // NOTE: remember to call the EventEmitter at the end of the data type definition
+  
+  myEventName1 = new EventEmitter<Type of data sent with event>();
+  myEventName2 = new EventEmitter<Type of data sent with event>();
+
+  @Output() myCustomEvent = new EventEmitter<{ key1: string, key2: string, etc. }>();
+
+  handlerWhichAlsoSendsDataToTopLevelComp() {
+    this.myCustomEvent.emit({ key1: 'string', key2: 'string2', etc. });
+  }
+
+}
+
+ALIASES WITH CUSTOM EVENTS:
+-If you want to assign an alias to the custom event, just pass it in to the @Output decorator as a string
+ Now this is the name of the event you will bind to on the nested component
+
+ Ex: @Output('eventAliasName') myCustomEvent = ...;
+
+
+
+

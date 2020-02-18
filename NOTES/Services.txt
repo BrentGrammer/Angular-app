@@ -1,0 +1,313 @@
+# SERVICES AND DEPENDENCY INJECTION
+
+
+**NOTE** - It is now advised by Angular team to use the @Injectable() decorator on ALL services, regardless if they are having 
+other services injected to them or not.
+
+KEY POINTS:
+-Make sure to use the right number of instances of a service (a service lower in component heirarchy will overwrite it's identical counterpart higher up)
+-Make sure to add service on the App module level and add @Injectable decorator to the service accepted an injected service
+
+1) create service as regular class
+
+2) provide the service in the providers array at appropriate component level
+   ***Note: a shortcut alternative is to use: @Injectable({ providedIn: "root" }) on the service if it is injectable
+
+3) inject the service into the component's constructor you wish to use it in.  If initializing data, do it in ngOnInit()
+
+*Important: The Angular injector for services is Heirarchical - it not only provides the service for the component it
+is passed into, but for all that component's child components.
+
+- The highest level for a service is in the app.module.ts providers array.
+
+Ex: If you provide a service in the App Module, the SAME INSTANCE of that service is available throughout the 
+    entire application.
+    NOTE: Instances of the service do not propogate up, they only go down to the children (so if you provide the service
+    to a child component whose parent already has it provided, that instance will propogate down to it's children and not
+    the one from the parent component)
+
+    GOTCHA: If you provide a service on a component that has no children (at the bottom of a heirarchy), and the SAME
+    service is provided to a parent component of it, then the instance provided in the bottom level component will
+    overwrite the downwards propagated instance of that service from a parent.  This can lead to overwriting data from
+    a service in a parent that you want passed down.
+
+    Solution: remove the service from the providers array in the child component to retain the same instance of the service from the parent.  Simply import the service into the component and inject it into the constructor.
+
+Ex in app.component.ts (parent component):
+
+@Component({
+  selector: "app-root",
+  templateUrl: "./app.component.html",
+  styleUrls: ["./app.component.css"],
+  providers: [UsersService]
+})
+export class AppComponent {}
+
+// Now in child component(s):
+@Component({
+  selector: "app-active-users",
+  templateUrl: "./active-users.component.html",
+  styleUrls: ["./active-users.component.css"],
+})
+export class ActiveUsersComponent {
+  constructor(private userService: UsersService) {}
+}
+
+// Not adding to providers and just injecting service into constructor allows you to use the same instance in child components.
+
+## CREATING A SERVICE:
+
+- Place general services in the app folder, or more specific services in a shared/ folder
+- Place services for a particular feature in the folder of the component/feature they belong to.
+
+- Name service files with a .service.ts extension.  Ex: `logging.service.ts`
+
+- A service is a normal TypeScript class and does not need a decorator.
+
+- You do not manually create instances of service classes you create, you use Angular's dependency injector to do that
+in your component so you have access to the service helper methods.
+
+1) Create a class named after the service and export it:
+  Ex: `export class LoggingService {}`
+
+2) Create helper methods in the class that will be used with the service
+
+Ex:
+  ```
+  export class LoggingService {
+    logStatusChange(status: string) {
+      console.log("A server status changed: " + status);
+    }
+  }
+  ```
+
+3) Add the service to a component: 
+   1) add constructor and inject the service into it
+   2) add providers to decorator config and pass in the service class
+
+  -Add a constructor to the component class which assigns a property to the service class.  
+   * the type of the argument must be the service class you created.
+  - Angular will see that the component requires the class type as an argument and will instantiate it for you
+  when constructing the component, and then assign it to the property because of the private accessor
+
+  - Finally add a providers property to the @Component config object, and set it to an array containing the types of
+  the services (their classes)
+
+   Ex in the class component ts file:
+   ```
+    ..imports
+    import { LoggingService } from "../logging.service";
+
+    @Component({
+        ...,
+        providers:[LoggingService]
+    })
+    export class NewAccountComponent {
+      @Output() accountAdded = new EventEmitter<{ name: string; status: string }>();
+
+      constructor(private loggingService: LoggingService) {}
+
+      
+      onCreateAccount(accountName: string, accountStatus: string) {
+        ...
+        // use the service:
+        this.loggingService.logStatusChange(accountStatus);
+      }
+   ```
+
+   ### INJECTING A SERVICE INTO ANOTHER SERVICE
+
+   - You can have services use other services (i.e. one service uses a logging service to log something whenever 
+     one of it's methods is called)
+
+   1) You cannot do this at the component level, you need to add the service to inject to another in the app.module.ts
+     providers.
+
+     Ex in app.module.ts:
+     ```
+     @NgModule({
+        declarations: [AppComponent, AccountComponent, NewAccountComponent],
+        imports: [BrowserModule, FormsModule],
+        providers: [AccountsService, LoggingService],
+        bootstrap: [AppComponent]
+      })
+     ```
+
+    2) Inject the service into the other service's contructor and use the service:
+
+    Ex:
+    ```
+    export class AccountsService {
+      ...
+
+      constructor(private loggingService: LoggingService) {}
+
+      addAccount(name: string, status: string) {
+        this.accounts.push({ name, status });
+        this.loggingService.logStatusChange(status);
+      }
+      ...
+    }
+    ```
+    3) Set up meta data for the service consuming the other injected service.
+       - Angular needs some meta data (i.e. provided on the @Component decorator) to inject the service into another
+       - Use @Injectable() decorator on the service you want to inject another into or if you are injecting other services into it.
+         **NOTE: As of Angular 8 it is advised to ALWAYS use @Injectable() on all service classes even if you are not injecting 
+                 another service
+
+       Ex:
+
+          ```
+          import { Injectable } from '@angular/core'
+
+          @Injectable()
+          export class AccountsService {
+            ...
+
+            constructor(private loggingService: LoggingService) {}
+            ...
+          }
+    ```
+
+### NOTE:
+
+If you're using Angular 6+ (check your package.json  to find out), you can provide application-wide services in a 
+different way.
+
+Instead of adding a service class to the providers[]  array in AppModule , you can set the following config in @Injectable() :
+
+```
+@Injectable({providedIn: 'root'})
+export class MyService { ... }
+This is exactly the same as:
+
+export class MyService { ... }
+and
+
+import { MyService } from './path/to/my.service';
+ 
+@NgModule({
+    ...
+    providers: [MyService]
+})
+export class AppModule { ... }
+```
+
+Using this new syntax is completely optional, the traditional syntax (using providers[] ) will still work. The 
+"new syntax" does offer one advantage though: Services can be loaded lazily by Angular (behind the scenes) and 
+redundant code can be removed automatically. This can lead to a better performance and loading speed - though 
+this really only kicks in for bigger services and apps in general.
+
+-----------
+
+ADDING AN EVENT TO SERVICE:
+
+-Enables cross component communication via an EventEmitter and avoids having to chain property event binding between cpomponents.
+
+-Efficient way if you want to have one component emit an event and have another comnponent listen for it.
+
+1) Add the event emitter event to the service you are going to use to emit the event:
+
+// In account.services.ts example:
+  statusUpdated = new EventEmitter<string>();
+
+2) In the component where you are using the service to emit, emit the event:
+
+  // In account.component.ts example:
+  onSetTo(status: string) {
+    this.accountsService.statusUpdated.emit(status);
+  }
+
+3) Subscribe to the event emitted in another component using the same service:
+
+  // In new-account.component.ts example:
+    constructor(private accountsService: AccountsService) {
+      this.accountsService.statusUpdated.subscribe((status: string) =>
+        alert("New Status: " + status)
+      );
+    }
+
+-Now new-account component will be listening for the event emitted from the other component using the same service.
+
+
+----
+
+COMMON PATTERNS:
+
+-Use a service to manage a list of data or data in general for a feature or component.  
+  -Make the data in the service private and create a getter
+
+  Ex:
+
+  export class RecipeService {
+  private recipes: Recipe[] = [
+    new Recipe(
+      "test recipe",
+      "test description",
+      "https://cdn.pixabay.com/photo/2016/01/03/17/59/bananas-1119790__340.jpg"
+    )
+  ];
+
+  
+  getRecipes() {
+    // return a slice so you don't return a direct reference to the private array - this is how JS works - slice creates
+    // a copy.
+    return this.recipes.slice();
+  }
+}
+
+---
+
+PASSING DATA ACROSS COMPONENTS VIA AN EVENT EMITTER:
+
+*Note a better approach to this is to use a Subject (from RxJS) - see pattern in Observables Notes.
+    *Use Subjects to emit events and pass data across components over Event Emitters:
+  Subjects are more efficient than EventEmitters behind the scenes and also allow access to rxjs operators.
+  -If you are using @Output() then just use Event Emitters (where you are not subscribing to an emitter)
+
+1) Create a service which will have an event emitter used to emit an event across components.
+  Ex:
+    @Injectable({ providedIn: "root" })
+    export class UserService {
+      activatedEmitter = new EventEmitter<boolean>();
+    }
+
+2) In component A's typescript class file inject the service into the constructor and use the event emitter to emit 
+   an event with data
+
+     export class UserComponent implements OnInit {
+        constructor(
+          private route: ActivatedRoute,
+          private userService: UserService
+        ) {}
+
+        ngOnInit() {
+          ...
+        }
+
+        onActivate() {
+          this.userService.activatedEmitter.emit(true);
+        }
+      }
+
+3) In component A's html template file, add a click listener to call the method on the class emitting the event
+
+  <button class="btn btn-primary" (click)="onActivate()">Activate</button>  
+
+4) In component B's typescript file, inject the same service into the constructor and use it to subscribe to the event
+   emitter and assign the emitted data to a field.
+
+   export class AppComponent implements OnInit {
+      userActivated = false;
+      constructor(private userService: UserService) {}
+
+      ngOnInit() {
+        this.userService.activatedEmitter.subscribe(didActivate => {
+          this.userActivated = didActivate;
+        });
+      }
+    }
+
+5) Add necessary directives/operations in component B's html file to access the data emitted in the created class field.
+
+   <p *ngIf="userActivated">Activated</p>

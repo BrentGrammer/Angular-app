@@ -1,0 +1,684 @@
+HTTP MODULE:
+
+*Http Requests handled by Angular's HttpClient module are Observables.
+
+-an http request sent with Angular returns an Observable that wraps the request.
+ You need to subscribe to the http request to get the response (if the request has no subscriptions, it simply won't be called.)
+
+ BEST PRACTICE: 
+  -The heavy lifting, http requests and transforming of data should be extracted to a service which is injected into the component 
+   requiring requested data.  
+
+
+---
+
+Setting up Angular for HTTP Requests:
+
+1) In app.module.ts, import and use the HttpClientModule from @angular/common/http and add it to the imports list in @NgModule().
+   This unlocks the HttpClient module for your app to use:
+
+    // app.module.ts:
+    ...
+    import { HttpClientModule } from '@angular/common/http';
+
+    @NgModule({
+      ...
+      imports: [BrowserModule, FormsModule, HttpClientModule],
+      ...
+    })
+    export class AppModule {}
+
+2) In your component ts class, import HttpClient from @angular/common/http and inject it into the constructor:
+
+3) Use the injected http module and call methods on it (i.e. matching http verbs) to send a request:
+
+   ex: this.http.post(url: string, [body: Object])
+
+// In Component typescript:
+    ...
+    import { HttpClient } from "@angular/common/http";
+
+    @Component({
+      ...
+    })
+    export class AppComponent implements OnInit {
+      ...
+      constructor(private http: HttpClient) {}
+
+      ...
+
+      onCreatePost(postData: { title: string; content: string }) {
+        // Send Http request
+        /**
+        * Note: The Angular HttpClient takes a javascript object passed in as the body and converts it to JSON for you.
+        */
+        this.http
+          .post(
+            "https://angular-recipes-app-584be.firebaseio.com/posts.json",
+            postData
+          )
+          .subscribe(responseData => {
+            console.log(responseData);
+          });
+      }
+      ...
+    }
+
+-----
+
+STORING AND TRANSFORMING DATA FROM HTTP REQUESTS (OBSERVABLE OPERATORS):
+
+-If you want to store the object returned from the http requests (i.e. a GET) in an array, then you need to transform it using 
+ Observable Operators.
+
+ -Use the .pipe() method on the http Observable to funnel and transform the data returned from the Observable with operators before 
+  it reaches the subscribe callback.
+
+
+fetchPosts() {
+    this.http
+      .get("https://angular-recipes-app-584be.firebaseio.com/posts.json")
+      .pipe(
+        map(responseData => {
+          // Transform the response data from an object to an array for storing in the component
+          const postsArray = [];
+          for (const key in responseData) {
+            // good practice: check that the key is the own property of the object and not of some prototype possibly.
+            if (responseData.hasOwnProperty(key)) {
+              postsArray.push({ ...responseData[key], id: key });
+            }
+          }
+          return postsArray;
+        })
+      )
+      .subscribe(posts => {
+        console.log(posts);
+      });
+  }
+
+
+  *** NOTE: the http methods provided by Angular are generic functions that accept a type of response data returned (so 
+      you don't have to annotate the arguments in the operator or subscribe callbacks)
+
+  Ex:
+  fetchPosts() {
+    this.http
+      .get<{ [key: string]: Post }>(
+        "https://angular-recipes-app-584be.firebaseio.com/posts.json"
+      )
+      .pipe(
+        map(responseData => {
+         ...
+          return postsArray;
+        })
+      )
+      .subscribe(posts => {
+        ...
+      });
+  }
+
+----------
+
+USING SERVICES FOR REQUEST LOGIC:
+
+-It is good practice to separate the http request and transforming logic into a resources service that you inject into the component
+ and use that to make requests and operate on data to return to the view.
+
+ ------------
+
+ HANDLING ERRORS:
+
+ Two ways to handle errors:
+ 1) The error callback in the subscription
+ 2) Using a Subject - this is useful if you have multiple components listening for the error.
+
+ --
+
+ SUBSCRIBE ERROR CALLBACK TO HANDLE ERRORS:
+
+ -The subscribe function to the Observable returned by the http methods from HttpClient module takes a second argument that fires 
+ when an error occurs. 
+
+- Add an error property to the typescript component class to store the error message
+- set the error message in the error callback argument in the subscribe() call on the request.
+- In the html template, conditionally display the error message stored in the property on the typescript class
+
+// Typescript class:
+export class AppComponent implements OnInit {
+  ...
+  error = null;
+
+  ...
+  ngOnInit() {
+    this.fetchPosts();
+  }
+  private fetchPosts() {
+    this.isFetching = true;
+    this.postsService.fetchPosts().subscribe(
+      posts => {
+        this.isFetching = false;
+        this.loadedPosts = posts;
+      },
+      error => {
+        this.error = error.message;
+      }
+    );
+  }
+}
+
+// html template:
+<div class="alert alert-danger" *ngIf="error">
+  <h1>An Error Occurred</h1>
+  <p>{{ error }}</p>
+</div>
+
+---
+
+USING A SUBJECT TO HANDLE ERRORS:
+
+-Useful when multiple components are interested in the error.
+
+1) Create an error property set to a new Subject used to emit the error to subscribers
+2) In the error callback to the subscribtion on the http request, emit the error calling .next(<errorMsg>) on the subject
+3) In the components that are interested, subscribe to the subject and in the callback, set the error field in the class to use
+   in the html template
+
+    // Example in a resource service class:
+
+    export class PostsService {
+      // Create a subject if emitting errors to multiple interested components
+      error: new Subject<string>();
+      ...
+      createAndStorePost(title: string, content: string) {    
+        this.http
+          .post<{ name: string }>(
+            ...
+          )
+          .subscribe(
+            responseData => {
+              ...
+            },
+            error => {
+              // emit the error to multiple interested components with the error Subject and subscribe to it in the interested components
+              // (in the ngOnInit of the component for example)
+              this.error.next(error.message);
+            }
+          );
+      }
+    }
+
+    // In the typescript class:
+    export class AppComponent implements OnInit, OnDestroy {
+      ...
+      error = null;
+      // used to unsubscribe from the error subject when component is destroyed:
+      errorSub: Subscription;
+
+      ...
+      ngOnInit() {
+        this.errorSub = this.postsService.error.subscribe(errorMessage => {
+          this.error = errorMessage;
+        });
+        ...
+      }
+      ...
+
+      ngOnDestroy() {
+        // cancel listening to the error message emited from posts service
+        this.errorSub.unsubscribe();
+      }
+    }
+
+    --------
+
+    CATCHERROR OPERATOR:
+
+    - A special operator in Angular that assists with handling errors.
+
+    to use it: import { catchError } from 'rxjs/operators'
+
+    -Use it in pipe to do some generic error handling (send to analytics, etc.) and then pass it on to subscribe
+    -Use the throwError Observable to pass it on.  throwError yields a new Observable that wraps the error.
+
+    Ex:
+
+      ... 
+      import { map, catchError } from "rxjs/operators";
+      import { Subject, throwError } from "rxjs";
+      
+      fetchPosts() {
+        return this.http
+          .get<{ [key: string]: Post }>(
+            ...
+          )
+          .pipe(
+            map(responseData => {
+              ....
+              return postsArray;
+            }),
+            catchError(errorRes => {
+              // could send to analytics server - some generic error handling task, etc.
+              // throwError wraps the error in an Observable to pass on to the subscribe function to listen to and use
+              return throwError(errorRes);
+            })
+        );
+
+note: the errorRes is probably of type HttpErrorResponse which is an Angular type
+
+Example extracting error handling to private function for reuse:
+
+
+login(email: string, password: string) {
+    return this.http
+      .post<AuthResponseData>(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`,
+        {
+          ...email/pw data
+        }
+      )
+      .pipe(catchError(this.handleError));
+  }
+
+  private handleError(errorRes: HttpErrorResponse) {
+    let errorMessage = "An Error occurred.";
+    if (!errorRes.error || !errorRes.error.message) {
+      return throwError(errorMessage);
+    }
+    errorMessage = errorRes.error.message;
+    return throwError(errorMessage);
+  }
+}
+
+
+===================
+
+SETTING HEADERS:
+
+-Any http verb method in the HttpClient takes an additional configuration argument where you can set things like headers.
+
+-Use the HttpHeaders Object (import it from @angular/common/http)
+Ex:
+
+ return this.http
+      .get<{ [key: string]: Post }>(
+        "https://angular-recipes-app-584be.firebaseio.com/posts.json",
+        {
+          headers: new HttpHeaders({ "my-custom-header": "Hello" })
+        }
+      )
+
+--------
+
+HTTP PARAMS:
+
+-Import the HttpParams from @angular/common/http
+
+-Pass in the params config to the configuration argument on the http verb method (same object that headers are configured in):
+-Use new HttpParams().set('key', 'value')
+
+Ex:
+
+return this.http
+      .get<{ [key: string]: Post }>(
+        "https://angular-recipes-app-584be.firebaseio.com/posts.json",
+        {
+          headers: new HttpHeaders({ "Custom-Header": "Hello" }),
+          params: new HttpParams().set("print", "pretty")
+        }
+      )
+
+--
+
+-Assigning Multiple Query Params:
+
+  -use the .append() on the HttpParams instance.
+
+    // Params is immutable, so assign it to a let for adding multiple query params for the request:
+
+    let myParams = new HttpParams();
+    myParams = myParams.append("print", "pretty");
+    myParams = myParams.append("another", "param");
+
+    return this.http
+      .get<{ [key: string]: Post }>(
+        "https://angular-recipes-app-584be.firebaseio.com/posts.json",
+        {
+          headers: new HttpHeaders({ "Custom-Header": "Hello" }),
+          params: myParams
+        }
+      )
+
+      NOTE: .append() returns the old object with all it's properties and allows you to add to them.
+
+      Can be used with headers as well.
+
+-------------------
+
+ACCESSING THE ENTIRE RESPONSE IN THE SUBSCRIPTION CALLBACK:
+
+-By default you get back the data from the response to use.
+-If you need access to the entire response object, i.e. headers, status code, etc., you can pass in a config object and set the 
+ 'observe' property which takes values such as 'body', or 'response' - 'body' is the default which extracts the response body and 
+  converts it to javascript.
+
+  values for observe:
+
+  'body' - the body of the response converted to javascript
+  'response' - entire response object incl. headers etc.
+  'events' - Used if you need granular control to update the ui during the request-response process.
+    access to events of response - comes with event types(encoded to numbers) Ex: Uploading files gets a type of HttpEvents.uploadProgress
+
+
+-You can use the `tap` operator to do something with the response without disturbing the response sent to the subscribe callback.
+  -Can be used in the .pipe() method
+  This "taps" into the response and allows you to do something, but nothing needs to be returned since it will allow the data to
+  continue to be passed through in the data flow to subscribe.
+
+  Ex:
+
+  ...
+  import { HttpEventType } from '@angular/common/http';
+  import { tap } from 'rxjs/operators';
+
+  deletePosts() {
+    return this.http
+      .delete("https://angular-recipes-app-584be.firebaseio.com/posts.json", {
+        observe: "events"
+      })
+      .pipe(
+        tap(event => {
+          // tap into the event being observed and passed through above
+          /**
+           * The data logged here will log a type of event (events are encoded with numbers) and a HttpResponse object
+           * Ex: Uploading files you'd get a HttpEventType.uploadProgress event fired you can check.
+           *
+           * You can check the event type with an Enum from the angular/common/http module
+           */
+          // check for the event type of sent (0) where you can inform the user that the request was sent etc.
+          if (HttpEventType.Sent) {
+            //...
+          }
+          // check if you got back a response against the evgent type - if so, the event is the response object:
+          if (event.type === HttpEventType.Response) console.log(event.body);
+        })
+      );
+  }
+
+
+-------------
+
+CHANGING THE RESPONSE BODY TYPE:
+
+-The default response body is JSON.
+
+-You can change the response body type to be something other than JSON to prevent angular from transforming it into a javascript
+Object automatically (i.e. you can have abody type of 'text' or 'blob', etc. to say keep it as that and don't parse it)
+
+Ex:
+
+   return this.http
+      .get(
+        "url",
+        {
+          headers: new HttpHeaders({ "Custom-Header": "Hello" }),
+          params: myParams,
+          responseType: "text"
+        }
+      )
+
+=====================
+
+INTERCEPTORS:
+
+-see auth-interceptor.service.ts for example in recipes app
+
+-Useful for configuring every request sent (i.e. for authentication - adding an auth token, etc.)
+-the interceptor will run right before your request is sent
+
+-Typical use case is to modify the request and then forward it (req is immutable so you need to make a clone and forward that)
+
+1) Create a file for your interceptor- name it as aservice since it is basically an Angular service (i.e. auth-interceptor.service.ts)
+
+2) Export a class from the file that implements the HttpInterceptor interface
+
+    Ex in auth-interceptor.service.ts:
+
+    import {
+      HttpInterceptor,
+      HttpRequest,
+      HttpHandler
+    } from "@angular/common/http";
+
+    export class AuthInterceptor implements HttpInterceptor {
+      // intercept gets two arguments that are provided by Angular when the interceptor is applied`
+      /**
+      * the request argument is a generic type and you can pass in the type of request data the request will yield.
+      * <any> is used here to accept any data
+      *
+      * next is an object with a `handle()` method that will forward the request and allow it to continue it's journey.
+      * Pass the request object to it.  Make sure to return the request
+      */
+      intercept(req: HttpRequest<any>, next: HttpHandler) {
+        // this will run right before the request leaves the application..
+        console.log("Request is on its way");
+        return next.handle(req);
+      }
+    }
+
+3) Provide the interceptor service:
+
+  -in app.module.ts, in the Providers array, insert Object with 3 keys: 'provide', 'useClass', 'multi'
+    -use the HTTP_INTERCEPTORS token to tell Angular that this service is an interceptor and should run before HttpRequests
+    -useClass tells Anfular which class to use as the interceptor
+    -multi tells Angular that you have more than one interceptor
+
+    // app.module.ts:
+
+    ...
+    import { HttpClientModule, HTTP_INTERCEPTORS } from "@angular/common/http";
+    ...
+    import { AuthInterceptor } from "./auth-interceptor.service";
+
+    @NgModule({
+      ...
+      providers: [
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+      ]
+    })
+    export class AppModule {}
+
+    // Now all requests will be intercepted by this interceptor
+
+4) To restrict the interceptor to a certain url:
+  -You have access to the url on the request object passed into intercept() by Angular.
+  -You can use req.url to get the url and conditionally operate based on it (i.e. if you don't want the intercept to do anything on the
+  request)
+
+5) Modifying the Request and then forwarding the clone:
+
+export class AuthInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    // If you want to modify the request, you need to clone it since the request object is immutable
+    const modifiedRequest = req.clone({
+      url: "new-url",
+      headers: req.headers.append("Auth", "Bearer xyz")
+    });
+    // forward the modified request, not the original:
+    return next.handle(modifiedRequest);
+  }
+}
+
+----
+
+INTERCEPTING THE RESPONSE WITH INTERCEPTORS:
+
+    - next.handle() returns an Observable, you can chain onto it to intercept the Response as well.
+    - The observable returned from .handle() is the request with the response wrapped into an Observable
+    - You can chain on a .pipe() to do something with the Response (you can use the tap operator for example - be careful using map
+      operator since you don't want to change the response in a way that makes your app break. Only use it if you want to transform
+      the response)
+    - In the pipe operator callback, check that the event type is of the Response type.
+
+      Note: The interceptor will always give you access to the event in the operator used in pipe on handle to allow granular access to 
+            the response.
+
+-----
+
+ADDING MULTIPLE INTERCEPTORS:
+
+-fater creating the other interceptor classes, they need to be added to app.module.ts
+-**NOTE: The Order the interceptors are registered in the app.module.ts matters since that is the order that they will be executed in.
+
+Ex in app.module.ts:
+
+    ...
+    import { HttpClientModule, HTTP_INTERCEPTORS } from "@angular/common/http";
+
+    import { AuthInterceptor } from "./auth-interceptor.service";
+    import { LoggingInterceptorService } from "./logging-interceptor.service";
+
+    @NgModule({
+      ...
+      // NOTE: The order you provide interceptors matter, they will execute on requests in that order - i.e. the auth interceptor adds
+      // custom headers and the logging interceptor wants to log them.
+      providers: [
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+        {
+          provide: HTTP_INTERCEPTORS,
+          useClass: LoggingInterceptorService,
+          multi: true
+        }
+      ],
+    })
+    export class AppModule {}
+
+
+------------
+
+USING MAP OPERATOR FOR NULL CHECKING:
+
+-You can pipe response data through map which can check for null fields and set them to prevent errors:
+
+Ex:
+
+fetchRecipes() {
+    this.http
+      .get(...)
+      .pipe(
+        map(recipes => {
+          return recipes.map(recipe => {
+            // this prevents errors in case ingredients are null - used as a null check
+            return {
+              ...recipe,
+              ingredients: recipe.ingredients ? recipe.ingredients : []
+            };
+          });
+        })
+      )
+      .subscribe(...);
+  }
+}
+
+-----------------
+
+USING RESOLVERS TO GUARD PAGES THAT NEED DATA ON LOAD:
+
+-see router resolver for further notes in routing notes
+
+-Useful for pages that need data on load - example - if you refresh a page that requires a fetch call to get data it needs for the view
+
+1) Create resolver service in the resource folder:
+
+ -create a class that is an injectable service and implements the Resolve interface
+ -Inject the service needed to retrieve data
+
+Ex: recipes-resolver.service.ts
+
+import { Injectable } from "@angular/core";
+import {
+  Resolve,
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot
+} from "@angular/router";
+import { Recipe } from "./recipe.model";
+import { DataStorageService } from "../shared/data-storage.service";
+
+/**
+ * This resolver ensures that when a page loads it has data that it depends on.
+ * Since data is stored on the backend, it needs to be fetched for routes that depend on it
+ *
+ * This resolver loads data before the recipes list page is loaded
+ */
+
+@Injectable({ providedIn: "root" }) // Generic takes type that is returned
+export class RecipesResolverService implements Resolve<Recipe[]> {
+  constructor(private dataStorageService: DataStorageService) {}
+
+   constructor(
+    private dataStorageService: DataStorageService,
+    private recipesService: RecipeService
+  ) {}
+
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
+    // Check to see if there are already recipes to use, so that the resolver does not overwrite recipe changes with fetched recipes
+    // only fetch if no recipes are loaded:
+    const recipes = this.recipesService.getRecipes();
+    if (recipes.length === 0) {
+      // NOte: no subscribe() call is necessary here because the resolver will subscribe automatically to find out once data is present
+      return this.dataStorageService.fetchRecipes();
+    } else {
+      // if recipes are loaded, then just return the recipes and don't fetch data
+      return recipes;
+    }
+  }
+}
+
+2) In the service getting data, tap into the responses data and set it to the resource service and return the Observable request 
+   for the resolver to use.
+
+   fetchRecipes() {
+    /**
+     * the Observable here is returned so that the recipes-resolver.service.ts can subscribe to it to act as a guard
+     * to make sure that components depending on having recipes available and fetched will get them without a manual fetch
+     */
+    return this.http.get<Recipe[]>(`${this.BASE_URL}/recipes.json`).pipe(
+      map(recipes => {
+        return recipes.map(recipe => {
+          return {
+            ...recipe,
+            ingredients: recipe.ingredients ? recipe.ingredients : []
+          };
+        });
+      }),
+      tap(recipes => {
+        // tap into the request data to set it to the recipes list and the recipes resolver will take the Observable returned and subscribe to it
+        this.recipeService.setRecipes(recipes);
+      })
+    );
+  }
+
+3) Add the resolve key to components registered in your routes module and set the resolver to components that need the data
+
+// in app-routing.module.ts
+
+const appRoutes: Routes = [
+  ...
+  {
+    path: "recipes",
+    component: RecipesComponent,
+    children: [
+      ...
+      {
+        path: ":id",
+        component: RecipeDetailComponent,
+        resolve: [RecipesResolverService]
+      },
+      {
+        path: ":id/edit",
+        component: RecipeEditComponent,
+        resolve: [RecipesResolverService]
+      }
+    ]
+  },
+];
+

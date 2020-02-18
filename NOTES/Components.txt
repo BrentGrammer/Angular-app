@@ -1,0 +1,131 @@
+COMPONENTS:
+
+app.component.* is the main app component that ties all other components together
+
+*A Component is a class that Angular uses to export objects based on it's blueprint
+
+-fields on a component class (the ts file) are accessible in the components html file directly by label name (without 
+ `this.label`, access as `label`)
+
+-You can create components manually or with the Angular CLI (i.e. nested custom components if you wanted):
+$ ng generate component <name-of-component>
+
+-NOTE: most initialization for a component should be done in the ngOnInit lifecycle method instead of the component's
+       constructor.
+
+CREATE WITH ANGULAR CLI:
+$ ng g c <component-name> --spec false
+// spec false is optional and does not generate a spec test file
+
+// you can also nest component folders on creation:
+$ ng g n path/nested/component
+
+CREATE A COMPONENT MANUALLY:
+
+-All components go into the app folder of the app.
+
+1) Create a folder with the name of the component (i.e. app/server, etc)
+2) create the typescript file for the component - naming convention: name.component.ts
+3) Create the class component (naming convention is the name and description in Pascal Case - NameComponent ):
+
+**You need to use a decorator to tell Angular that this class is a component (decorators are a typescript feature that enhance 
+your code in some way)
+-You need to import the decorator to the file and pass a config object to the decorator that stores metadata for the component
+that tells Angular what to do with the class
+*NOTE: Each component must have a template or templateUrl property in the decorator- this is required
+Note: you can inline html in the decorator instead of using a separate html template file by using the template property
+instead of templateUrl: Ex: template: '<app-tag></app-tag>'
+
+import { Component } from '@angular/core';
+
+@Component({
+  // html element to insert this in your other component's html file (name must be unique, prefix with app-name):
+  selector: 'app-server',
+  // relative path to the html template file to use for the component
+  templateUrl: './server.component.html'
+})
+export class ServerComponent
+
+4) Create the Component html file (i.e. server.component.html) in the same folder as the component.ts file
+
+5) Register the component in the app.module.ts file in the declarations array:
+-Module files bundle pieces of your components into a packages
+-Normally you only use the app module
+
+-in the app.module.ts file, import the component (as a named export in { }) and add it to the declarations array to tell 
+typescript where to find the component:
+
+Ex in app.module.ts:
+  import { ServerComponent } from './server/server.component';
+
+  @NgModule({
+    declarations: [
+      AppComponent,
+      ServerComponent
+    ],
+
+
+6) Insert the selector tag in the component html file of another compoent (i.e. the app.component.html file for example)
+to insert that component into a parent:
+Ex in app.component.html:
+
+<app-server><app-server>
+
+// The contents of server.component.html will be inserted here in the other components html template
+
+
+----------------
+
+CREATING COMPONENTS WITH ANGULAR CLI:
+
+$ ng generate component <name-of-component>
+
+shorthand:
+
+$ ng g c servers
+
+// creates component files and registers it in app.module.ts
+
+---------------
+
+ALTERNATIVE WAYS TO IDENTIFY SELECTORS IN THE COMPONENT TYPSECRIPT FILE:
+
+-You can use various selectors (id and pseudo selectors does not work)
+-Typically you just use the element as a selector (i.e. selectors: 'tag-name')
+
+You can access attributes in the selector prop as well which will look for an element in the html template for the component
+based on an attribute (they can be custom attributes):
+
+// In typescript file, select attributes just like in css in a string:
+selector: '[app-mycomponent]'
+
+In the html template:
+
+<div app-mycomponent></div>
+
+// The JSfor the component will be inserted on the div with that attribute specified in selectors
+
+-You can also access by class like in css:
+
+selectors: '.app-servers'
+
+In the html template:
+
+<div class="app-servers"></div>
+// will use this div
+
+------------------
+
+SHARING DATA BETWEEN COMPONENTS:
+
+-Create a /shared folder in the app folder level of the project
+
+-You can store model files for data that will be used in multiple components throughout the app.
+
+
+
+
+
+
+
+

@@ -1,0 +1,64 @@
+STYLING COMPONENTS:
+
+-In the component's *.component.ts file, you can set the styleUrls prop to point to an array of stylesheet files:
+Ex:
+styleUrls: ['./app.component.css']
+
+-You can also write inline CSS as a string if you use a styles property (make sure it's in an array):
+ex:
+styles: [`
+  h3 {
+    color: blue;
+  }
+`]
+
+-For example, you can edit the *.component.css file which defines styles for that component to change styling.
+
+==============
+
+VIEW ENCAPSULATION:
+
+-Angular modifies the behavior or CSS files so that the rules defined in them do not effect the entire document, but only
+elements in the component they are associated with.
+
+Ex: assigning a rule to p tags will not affect p tags inside nested componets, only p tags in the top level component
+which the css is associated with.
+
+(Under the hood, angular adds unique component based attribute to all of the elements targeted in the css rules for that 
+component so that any rules for those elements are applied to the ones with that added attribute only)
+
+Ex: <p _ngcontent_ejo-1>
+   Css: p[_ngcontent_ejo-1] { ... }
+
+OVERRIDING VIEW ENCAPSULATION:
+
+-If you want styles applied in a parent component to a nested component for example, you can override this behavior so that
+elements in the nested component will receive the rule set in the parent component's css as well:
+
+-import ViewEncapsulation from @angular/core in the nested component ts file
+-In the nested component ts class def file, in the @Component decorator, add an encapsulation prop and set it to 
+ViewEncapsulation.None
+
+Ex:
+import { ..., ViewEncapsulation } from '@angular/core';
+
+@Component({
+  ...,
+  encapsulation: ViewEncapsulation.None
+})
+class ...
+
+// This removes the adding of unique component attributes to all the elements so that rules set in css of another 
+component will apply to them.  
+NotE: Usually you do not want this behavior, but this is how you do it if needed.
+
+-
+
+OTHER MODES OF VIEW ENCAPSULATION WHICH CAN BE SET MANUALLY:
+
+ViewEncapsulation.None     -- override Angular setting custom attributes on elements
+ViewEncapsulation.Native   -- use Shadow DOM (not supported by all browsers yet)
+ViewEncapsulation.Emulated -- this is the default to emulate shadow dom (not needed to explicitly set)
+
+
+

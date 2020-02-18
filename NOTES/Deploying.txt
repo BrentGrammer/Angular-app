@@ -1,0 +1,25 @@
+PREPARING FOR DEPLOYMENT:
+
+1) Use Environment variables:
+  -In src/environments/environment.prod.ts or src/environments/environment.ts files, you can set key value pairs for environment variables
+  *NOTE: Angular automatically switches out the variables for prod and development (based on the file)
+
+  -In the file you want to use the env variable:
+    import { environment } from '../environments/environment';
+
+    const apikey = environment.myApiKey;
+
+2) Build app: `ng build --prod`
+
+3) Deploy generated build files to static host (not capable of server side code)
+
+  FIREBASE HOSTING:
+
+  1) Install Firebase cli: `npm install -g firebase-tools`
+  2) login to firebase: `firebase login`
+  3) In Angular project folder, run `firebase init` to link project to Firebase
+     -Select Hosting option
+     -Create a new project if not done already
+     -Set the build folder to dist/<YourAppName> -- check the folder name in your project where your index.html is in the built files
+     -Do NOT overwrite the Index.html - select `n`
+  4) `firebase deploy`

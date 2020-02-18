@@ -1,0 +1,10 @@
+DEBUGGIN:
+
+-Augury - a Chrome Extension tool to use with Angular apps for debugging
+
+https://augury.rangle.io/ 
+-click install to install it to Chrome as an extension tool.
+
+SOURCE MAPS:
+
+-Go into developer tools to the SOURCES tab and click on Webpack:// in the side menu to see your original source files for creating breakpoints and debugging.
