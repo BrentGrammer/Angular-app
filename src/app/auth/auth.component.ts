@@ -59,4 +59,13 @@ export class AuthComponent {
     );
     form.reset();
   }
+
+  /**
+   * called from listening to the (close) event emitted from the alert component.
+   * Purpose is to clear the error when error alert is closed.
+   * This hinges on the ngIf pattern where the alert component in auth html is only displaying if this.error is truthy ( Ex: *ngIf="error")
+   */
+  onHandleError() {
+    this.error = null;
+  }
 }

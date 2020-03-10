@@ -1,5 +1,3 @@
-import { userInfo } from "os";
-
 /**
  * This file manages the user model
  *   - managing auth tokens to see if they are valid or expired

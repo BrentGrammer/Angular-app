@@ -4,7 +4,11 @@
       <p>{{ error }}</p>
     </div> -->
     <!-- use ngIf to declaratively load dynamic components like an alert - error comes from the auth component and message is from the alert component settable with the @Input decorator applied -->
-    <app-alert [message]="error" *ngIf="error"></app-alert>
+    <app-alert
+      [message]="error"
+      *ngIf="error"
+      (close)="onHandleError()"
+    ></app-alert>
     <div *ngIf="isLoading" style="text-align: center;">
       <app-loading-spinner></app-loading-spinner>
     </div>
