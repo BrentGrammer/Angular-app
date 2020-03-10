@@ -21,4 +21,4 @@
 - Authentication with Firebase
 - Dynamic Components
   - Declarative Approach (ngIf)
-  - Imperative Approach
+  - Imperative Approach (programmatic creation using ViewContainerRef and placeholder directives)

@@ -883,6 +883,10 @@ Ex:
 
 -Access local references in the ts file of the component directly with @ViewChild('local ref label') decorator on 
 the property name.
+
+- You can also pass in a type (such as a directive) and ViewChild will find the element with the first occurence of it on it. 
+   Ex: @ViewChild(MyCustomDirective) placeInTemplateWithDirective: MyCustomDirective
+
 Note: In Angular 8, if using the ref in ngOnInit() then you need to add { static: true } as a second arg.  Otherwise
       you need to do { static: false }
 

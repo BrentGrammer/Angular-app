@@ -42,6 +42,8 @@ ngElse:
 
 -builtin ng-template with reference set on it used in else statement
 
+ng-template:
+  - similar to React.Fragment.  Does not add element to DOM as overhead, but can be used as an element to inject components (see auth.componet.html for the error alert )
 <p *ngIf="serverCreated; else noServer">Server was created, name: {{ serverName }}</p>
 <ng-template #noServer>
   <p>No SErver created</p>

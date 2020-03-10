@@ -22,6 +22,7 @@ import { AuthComponent } from "./auth/auth.component";
 import { LoadingSpinnerComponent } from "./shared/loading-spinner/loading-spinner.component";
 import { AuthInterceptorService } from "./auth/auth-interceptor.service";
 import { AlertComponent } from "./shared/alert/alert.component";
+import { PlaceHolderDirective } from "./shared/placeholder/placeholder.directive";
 
 @NgModule({
   declarations: [
@@ -38,7 +39,8 @@ import { AlertComponent } from "./shared/alert/alert.component";
     RecipeStartComponent,
     RecipeEditComponent,
     LoadingSpinnerComponent,
-    AlertComponent
+    AlertComponent,
+    PlaceHolderDirective
   ],
   imports: [
     BrowserModule,
@@ -57,6 +59,9 @@ import { AlertComponent } from "./shared/alert/alert.component";
       multi: true
     }
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  // needed for dynanmic components created programmativally without a selector or listed in the route module (i.e. see error alert used in auth.component.ts)
+  // ***NOTE: You don't need to do this if using Angular 9+
+  entryComponents: [AlertComponent]
 })
 export class AppModule {}

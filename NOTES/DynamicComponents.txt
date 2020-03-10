@@ -1,0 +1,50 @@
+DYNAMIC COMPONENTS:
+
+-How to create components dynamically (i.e. alerts and modals etc.)
+
+NgIf Approach:
+  *** Easiest and most common approach to creating components dynamically.
+  - use ngIf on a component to check whether to render it based on conditions
+    - see alert.component.ts and auth.component.ts in project
+
+
+    ----
+
+
+Imperative Approach:
+
+-More complicated and only used if you need to.
+
+- create components Programmatically.
+
+See auth.component.ts/html, shared/placeholder/Placeholder.directive.ts
+
+1) Create private method in parent component of alert/modal. (see auth.component.ts)
+
+NOTE: You cannot just import the component and instantiate it in the ts file - Angular does more than just create an object when a component is made.
+  You need to inject a `componentFactoryResolver` into the component's constructor where you are programatically creating the component.
+    Ex in auth.component.ts: 
+        constructor(...others, private componentFactoryResolver: ComponentFactoryResolver) {}
+
+  You then create the component factory (not the component) using the .resolveComponentFactory passing in the type.
+
+2) In the html, you need a ViewContainerRef to render the component:
+  - this is an object managed internally by Angular which gives Angular a reference/pointer to a place in the DOM with which it can interact
+    - this object has more than just coordinates, it has methods like create a component at those coordinates, etc.
+
+    - Create a helper directive (i.e. name it placeholder - see shared/placeholder in project)
+
+3) To inject the oomponent into the html template, use <ng-template> element (similar to react Fragment - does not add extra div or element to the DOM).
+  -add the directive created to the ng-template (ex: appPlaceholder)
+
+4) Assign @ViewChild to the directive element in the template to get access to the ViewContainerRef
+
+5) Use the ViewContainerRef pointed to by @ViewChild property created to generate the component.  Pass in the factory created to the
+create component method built in to the ViewContainerRef
+
+
+  NOTE: If you get a entry component error - this occurs in Angular 8 - 
+     *** In Angular 9+ this will not occur and things will work out of the box.
+
+     6) Add entryComponents to the app.module.ts:
+       Ex:  entryComponents: [AlertComponent]
